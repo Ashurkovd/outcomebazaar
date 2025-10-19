@@ -27,6 +27,8 @@ export default function OutcomeBazaar() {
   const [closePositionData, setClosePositionData] = useState(null);
   const [realizedPnL, setRealizedPnL] = useState(0);
   const [activityHistory, setActivityHistory] = useState([]);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   const categories = ['All', 'Cricket', 'Politics', 'Economy', 'Space', 'Entertainment'];
   const POLYGON_CHAIN_ID = '0x89';
@@ -989,42 +991,79 @@ export default function OutcomeBazaar() {
     }
   }, []);
 
+  // Auto-hide header on scroll down, show on scroll up
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Only hide on mobile (viewport width < 768px)
+      if (window.innerWidth < 768) {
+        if (currentScrollY > lastScrollY && currentScrollY > 80) {
+          // Scrolling down & past threshold
+          setIsHeaderVisible(false);
+        } else {
+          // Scrolling up or at top
+          setIsHeaderVisible(true);
+        }
+      } else {
+        // Always show header on desktop
+        setIsHeaderVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
-      <header className="bg-black bg-opacity-40 backdrop-blur-md border-b border-purple-500 border-opacity-30 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <TrendingUp className="text-white" size={24} />
+      <header className={`bg-black bg-opacity-40 backdrop-blur-md border-b border-purple-500 border-opacity-30 sticky z-50 transition-all duration-300 ${isHeaderVisible ? 'top-0' : '-top-32'}`}>
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
+            <button
+              onClick={() => {
+                setCurrentView('markets');
+                setSearchTerm('');
+                setSelectedCategory('All');
+              }}
+              className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <TrendingUp className="text-white" size={20} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">OutcomeBazaar</h1>
-                <p className="text-sm text-purple-300 flex items-center gap-2">
+                <h1 className="text-lg sm:text-2xl font-bold text-white">OutcomeBazaar</h1>
+                <p className="hidden sm:flex text-sm text-purple-300 items-center gap-2">
                   Forecast Exchange
                   <span className="px-2 py-0.5 bg-purple-500 bg-opacity-30 rounded text-xs">Polygon</span>
                 </p>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
+            </button>
+            <div className="flex items-center gap-1 sm:gap-3">
               {walletConnected ? (
                 <>
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-                    <span className="text-xl">💵</span>
-                    <span className="font-semibold">{formatUSDT(usdtBalance)}</span>
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2">
+                    <span className="text-base sm:text-xl">💵</span>
+                    <span className="font-semibold text-sm sm:text-base">{formatUSDT(usdtBalance)}</span>
                   </div>
-                  <div className="bg-purple-500 bg-opacity-20 backdrop-blur-sm border border-purple-400 border-opacity-30 px-4 py-2 rounded-lg flex items-center gap-2">
+                  <div className="hidden sm:flex bg-purple-500 bg-opacity-20 backdrop-blur-sm border border-purple-400 border-opacity-30 px-4 py-2 rounded-lg items-center gap-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                     <span className="text-white font-mono text-sm">{formatAddress(walletAddress)}</span>
                   </div>
-                  <button onClick={disconnectWallet} className="px-4 py-2 bg-red-500 bg-opacity-20 hover:bg-opacity-30 text-red-300 rounded-lg transition-all">
+                  <button onClick={disconnectWallet} className="hidden sm:block px-4 py-2 bg-red-500 bg-opacity-20 hover:bg-opacity-30 text-red-300 rounded-lg transition-all text-sm">
                     Disconnect
+                  </button>
+                  <button onClick={disconnectWallet} className="sm:hidden p-2 bg-red-500 bg-opacity-20 hover:bg-opacity-30 text-red-300 rounded-lg transition-all">
+                    <span className="text-sm">✕</span>
                   </button>
                 </>
               ) : (
-                <button onClick={connectWallet} className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-purple-500/50">
-                  <Wallet size={20} />
-                  Connect Wallet
+                <button onClick={connectWallet} className="px-3 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-purple-500/50 text-sm sm:text-base">
+                  <Wallet size={16} className="sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">Connect Wallet</span>
+                  <span className="sm:hidden">Connect</span>
                 </button>
               )}
             </div>
@@ -1041,40 +1080,45 @@ export default function OutcomeBazaar() {
             </div>
           )}
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex gap-2">
-              <button onClick={() => setCurrentView('markets')} className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentView === 'markets' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-                <BarChart3 size={18} />
-                Markets
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 flex-1 min-w-0">
+              <button onClick={() => setCurrentView('markets')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-sm sm:text-base ${currentView === 'markets' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+                <BarChart3 size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <span className="hidden sm:inline">Markets</span>
+                <span className="sm:hidden">📊</span>
               </button>
-              <button onClick={() => setCurrentView('portfolio')} className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentView === 'portfolio' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-                <PieChart size={18} />
-                Portfolio
+              <button onClick={() => setCurrentView('portfolio')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-sm sm:text-base ${currentView === 'portfolio' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+                <PieChart size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <span className="hidden sm:inline">Portfolio</span>
+                <span className="sm:hidden">💼</span>
               </button>
-              <button onClick={() => setCurrentView('activity')} className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentView === 'activity' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-                <Activity size={18} />
-                Activity
+              <button onClick={() => setCurrentView('activity')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-sm sm:text-base ${currentView === 'activity' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+                <Activity size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <span className="hidden sm:inline">Activity</span>
+                <span className="sm:hidden">📜</span>
               </button>
-              <button onClick={() => setCurrentView('trending')} className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${currentView === 'trending' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-                <TrendingUp size={18} />
-                Trending
+              <button onClick={() => setCurrentView('trending')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-sm sm:text-base ${currentView === 'trending' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+                <TrendingUp size={16} className="sm:w-[18px] sm:h-[18px]" />
+                <span className="hidden sm:inline">Trending</span>
+                <span className="sm:hidden">🔥</span>
               </button>
             </div>
             {currentView === 'markets' && (
-              <button onClick={() => setShowCreateMarket(true)} className="px-4 py-2 bg-green-500 bg-opacity-20 hover:bg-opacity-30 text-green-300 rounded-lg font-medium transition-all flex items-center gap-2">
+              <button onClick={() => setShowCreateMarket(true)} className="px-3 sm:px-4 py-2.5 sm:py-2 bg-green-500 bg-opacity-20 hover:bg-opacity-30 text-green-300 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap">
                 <Plus size={18} />
-                Suggest Market
+                <span className="hidden sm:inline">Suggest Market</span>
+                <span className="sm:hidden">Suggest</span>
               </button>
             )}
           </div>
           {currentView === 'markets' && (
-            <div className="flex gap-3 flex-wrap mt-4">
-              <div className="flex-1 min-w-64 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" size={20} />
-                <input type="text" placeholder="Search markets..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-purple-900 bg-opacity-30 border border-purple-500 border-opacity-30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-purple-400" />
+            <div className="flex gap-2 sm:gap-3 flex-wrap mt-3 sm:mt-4">
+              <div className="flex-1 min-w-0 sm:min-w-64 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" size={18} />
+                <input type="text" placeholder="Search markets..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-3 sm:pr-4 py-2.5 sm:py-2 bg-purple-900 bg-opacity-30 border border-purple-500 border-opacity-30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-purple-400 text-sm sm:text-base" />
               </div>
               <div className="flex gap-2 flex-wrap">
                 {categories.map(cat => (
-                  <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedCategory === cat ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+                  <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg font-medium transition-all text-sm sm:text-base whitespace-nowrap ${selectedCategory === cat ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
                     {cat}
                   </button>
                 ))}
@@ -1083,7 +1127,7 @@ export default function OutcomeBazaar() {
           )}
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8 overflow-x-hidden">
         {currentView === 'markets' && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -1558,7 +1602,18 @@ export default function OutcomeBazaar() {
             <div className="mb-4">
               <label className="block text-sm font-medium text-purple-300 mb-2">Amount (USDT)</label>
               <div className="relative">
-                <input type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} placeholder="Enter amount" className="w-full px-4 py-3 bg-black bg-opacity-30 border border-purple-500 border-opacity-30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-purple-500" min="1" max={usdtBalance} step="0.01" />
+                <input type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} placeholder="Enter amount" className="w-full px-4 py-3 pr-20 bg-black bg-opacity-30 border border-purple-500 border-opacity-30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-purple-500" min="1" max={usdtBalance} step="0.01" />
+                <button
+                  onClick={() => {
+                    // Calculate max affordable amount accounting for fees
+                    // Max = available balance (fees already deducted from what we can invest)
+                    const maxAmount = Math.floor(usdtBalance * 100) / 100; // Round down to 2 decimals
+                    setBetAmount(maxAmount.toString());
+                  }}
+                  className="absolute right-12 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-semibold rounded transition-all"
+                >
+                  Max
+                </button>
                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xl">💵</span>
               </div>
               <p className="text-sm text-purple-400 mt-2">Available: {formatUSDT(usdtBalance)}</p>
@@ -1741,18 +1796,75 @@ export default function OutcomeBazaar() {
               <label className="block text-sm font-medium text-purple-300 mb-2">
                 Shares to Close
               </label>
-              <input
-                type="number"
-                value={partialCloseAmount}
-                onChange={(e) => setPartialCloseAmount(e.target.value)}
-                placeholder="Enter shares to close"
-                max={selectedClosePosition.maxShares}
-                className="w-full px-4 py-3 bg-black bg-opacity-30 border border-purple-500 border-opacity-30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-purple-500"
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  value={partialCloseAmount}
+                  onChange={(e) => setPartialCloseAmount(e.target.value)}
+                  placeholder="Enter shares to close"
+                  max={selectedClosePosition.maxShares}
+                  className="w-full px-4 py-3 pr-16 bg-black bg-opacity-30 border border-purple-500 border-opacity-30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-purple-500"
+                />
+                <button
+                  onClick={() => {
+                    // Set to max closeable shares (rounded down to avoid errors)
+                    const maxShares = Math.floor(selectedClosePosition.maxShares * 100) / 100;
+                    setPartialCloseAmount(maxShares.toString());
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-semibold rounded transition-all"
+                >
+                  Max
+                </button>
+              </div>
               <p className="text-xs text-purple-400 mt-1">
                 Max: {selectedClosePosition.maxShares.toFixed(2)} shares
               </p>
             </div>
+
+            {partialCloseAmount && parseFloat(partialCloseAmount) > 0 && (() => {
+              const amount = parseFloat(partialCloseAmount);
+              const totalShares = selectedClosePosition.position.shares;
+              const percentage = ((amount / totalShares) * 100).toFixed(1);
+              const isFull = amount === totalShares;
+
+              // Calculate estimated proceeds (same logic as executePartialClose)
+              const market = markets.find(m => m.id === selectedClosePosition.position.marketId);
+              const startPrice = selectedClosePosition.position.outcome === 'yes' ? market.yesPrice : market.noPrice;
+              const estimatedValue = amount * startPrice;
+              const priceImpact = calculatePriceImpact(estimatedValue, market.totalLiquidity);
+              const endPrice = Math.max(0.01, startPrice - priceImpact);
+              const avgPrice = (startPrice + endPrice) / 2;
+              const actualValue = amount * avgPrice;
+              const fee = actualValue * (FEE_PERCENTAGE / 100);
+              const netProceeds = actualValue - fee;
+              const remainingShares = totalShares - amount;
+
+              return (
+                <div className="bg-black bg-opacity-30 rounded-lg p-4 mb-4 border border-purple-500 border-opacity-20">
+                  {/* Confirmation Text */}
+                  <div className={`text-sm font-semibold mb-3 ${isFull ? 'text-orange-400' : 'text-yellow-400'}`}>
+                    {isFull
+                      ? `You will close all ${totalShares.toFixed(2)} shares (100%)`
+                      : `You will close ${amount.toFixed(2)} of ${totalShares.toFixed(2)} shares (${percentage}%)`
+                    }
+                  </div>
+
+                  {/* Estimated Proceeds */}
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-purple-300">Estimated proceeds:</span>
+                    <span className="text-white font-semibold">~{formatUSDT(netProceeds)}</span>
+                  </div>
+
+                  {/* Remaining Position (only show if partial) */}
+                  {!isFull && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-purple-300">Remaining position:</span>
+                      <span className="text-white font-semibold">{remainingShares.toFixed(2)} shares</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="flex gap-3">
               <button
@@ -1767,10 +1879,18 @@ export default function OutcomeBazaar() {
               </button>
               <button
                 onClick={() => executePartialClose(selectedClosePosition.position.id, parseFloat(partialCloseAmount))}
-                disabled={!partialCloseAmount || parseFloat(partialCloseAmount) > selectedClosePosition.maxShares}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!partialCloseAmount || parseFloat(partialCloseAmount) > selectedClosePosition.maxShares || parseFloat(partialCloseAmount) <= 0}
+                className={`flex-1 px-4 py-3 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  partialCloseAmount && parseFloat(partialCloseAmount) === selectedClosePosition.position.shares
+                    ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
+                    : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                }`}
               >
-                Close Partial
+                {!partialCloseAmount || parseFloat(partialCloseAmount) <= 0
+                  ? 'Close Position'
+                  : parseFloat(partialCloseAmount) === selectedClosePosition.position.shares
+                  ? 'Close Full Position'
+                  : 'Close Partial Position'}
               </button>
             </div>
           </div>
