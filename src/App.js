@@ -30,6 +30,8 @@ export default function OutcomeBazaar() {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showWalletPrompt, setShowWalletPrompt] = useState(false);
+  const [showTradeSuccessModal, setShowTradeSuccessModal] = useState(false);
+  const [tradeSuccessData, setTradeSuccessData] = useState(null);
 
   const categories = ['All', 'Cricket', 'Politics', 'Economy', 'Space', 'Entertainment'];
   const POLYGON_CHAIN_ID = '0x89';
@@ -704,7 +706,16 @@ export default function OutcomeBazaar() {
         console.warn(`⚠️ Pool usage at ${(newPoolUsage * 100).toFixed(1)}% for market ${selectedMarket.id}`);
       }
 
+      // Show success modal instead of auto-closing
       setTimeout(() => {
+        setTradeSuccessData({
+          marketTitle: selectedMarket.title,
+          outcome: betType,
+          shares: shares,
+          amountSpent: amount,
+          txHash: mockTxHash
+        });
+        setShowTradeSuccessModal(true);
         setTxStatus('');
         setTxHash('');
         setSelectedMarket(null);
@@ -2047,6 +2058,88 @@ export default function OutcomeBazaar() {
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white rounded-lg font-medium transition-all shadow-lg"
                 >
                   Confirm Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trade Success Modal */}
+      {showTradeSuccessModal && tradeSuccessData && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl max-w-md w-full shadow-2xl border border-purple-500 border-opacity-30 flex flex-col max-h-[85vh]">
+            {/* Modal Header - Fixed */}
+            <div className="p-6 pb-4 flex-shrink-0">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                  <CheckCircle className="text-white" size={28} />
+                </div>
+                <h2 className="text-xl font-bold text-white">Position Opened!</h2>
+              </div>
+              <p className="text-purple-200 text-sm">{tradeSuccessData.marketTitle}</p>
+            </div>
+
+            {/* Modal Body - Scrollable */}
+            <div className="px-6 overflow-y-auto flex-1" style={{WebkitOverflowScrolling: 'touch'}}>
+              <div className="bg-green-500 bg-opacity-10 border border-green-500 border-opacity-30 rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
+                <CheckCircle className="text-green-400" size={20} />
+                <span className="text-green-300 text-sm font-semibold">Your position is now active in your portfolio</span>
+              </div>
+
+              <div className="bg-black bg-opacity-30 rounded-lg p-4 mb-4 border border-purple-500 border-opacity-20">
+                <div className="flex justify-between text-sm mb-3 pb-3 border-b border-purple-500 border-opacity-20">
+                  <span className="text-purple-300">Position:</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    tradeSuccessData.outcome === 'yes'
+                      ? 'bg-green-500 bg-opacity-20 text-green-300'
+                      : 'bg-red-500 bg-opacity-20 text-red-300'
+                  }`}>
+                    {tradeSuccessData.outcome.toUpperCase()}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-purple-300">Shares purchased:</span>
+                  <span className="font-semibold text-white">{tradeSuccessData.shares.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-purple-300">Amount spent:</span>
+                  <span className="font-semibold text-white">{formatUSDT(tradeSuccessData.amountSpent)}</span>
+                </div>
+              </div>
+
+              <div className="bg-black bg-opacity-30 rounded-lg p-3 mb-4 border border-purple-500 border-opacity-20">
+                <a href={`https://polygonscan.com/tx/${tradeSuccessData.txHash}`} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                  <span>View transaction on PolygonScan</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+            </div>
+
+            {/* Modal Footer - Sticky */}
+            <div className="p-6 pt-4 flex-shrink-0 border-t border-purple-500 border-opacity-20">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowTradeSuccessModal(false);
+                    setTradeSuccessData(null);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setShowTradeSuccessModal(false);
+                    setTradeSuccessData(null);
+                    setCurrentView('portfolio');
+                  }}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  <TrendingUp size={18} />
+                  View Portfolio
                 </button>
               </div>
             </div>
