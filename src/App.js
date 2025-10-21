@@ -1019,9 +1019,9 @@ export default function OutcomeBazaar() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
-      <header className={`bg-black bg-opacity-40 backdrop-blur-md border-b border-purple-500 border-opacity-30 sticky z-50 transition-all duration-300 ${isHeaderVisible ? 'top-0' : '-top-32'}`}>
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-4">
-          <div className="flex items-center justify-between mb-2 sm:mb-4">
+      <header className="bg-black bg-opacity-40 backdrop-blur-md border-b border-purple-500 border-opacity-30 md:sticky md:top-0 z-50">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-1.5 sm:py-4">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-4">
             <button
               onClick={() => {
                 setCurrentView('markets');
@@ -1079,27 +1079,27 @@ export default function OutcomeBazaar() {
               )}
             </div>
           )}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 flex-1 min-w-0">
-              <button onClick={() => setCurrentView('markets')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-sm sm:text-base ${currentView === 'markets' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-                <BarChart3 size={16} className="sm:w-[18px] sm:h-[18px]" />
+          <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+            <div className="flex gap-1 sm:gap-2 flex-1 min-w-0">
+              <button onClick={() => setCurrentView('markets')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'markets' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+                <BarChart3 size={14} className="sm:w-[18px] sm:h-[18px]" />
                 <span className="hidden sm:inline">Markets</span>
-                <span className="sm:hidden">📊</span>
+                <span className="sm:hidden text-base">📊</span>
               </button>
-              <button onClick={() => setCurrentView('portfolio')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-sm sm:text-base ${currentView === 'portfolio' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-                <PieChart size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <button onClick={() => setCurrentView('portfolio')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'portfolio' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+                <PieChart size={14} className="sm:w-[18px] sm:h-[18px]" />
                 <span className="hidden sm:inline">Portfolio</span>
-                <span className="sm:hidden">💼</span>
+                <span className="sm:hidden text-base">💼</span>
               </button>
-              <button onClick={() => setCurrentView('activity')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-sm sm:text-base ${currentView === 'activity' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-                <Activity size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <button onClick={() => setCurrentView('activity')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'activity' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+                <Activity size={14} className="sm:w-[18px] sm:h-[18px]" />
                 <span className="hidden sm:inline">Activity</span>
-                <span className="sm:hidden">📜</span>
+                <span className="sm:hidden text-base">📜</span>
               </button>
-              <button onClick={() => setCurrentView('trending')} className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-sm sm:text-base ${currentView === 'trending' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-                <TrendingUp size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <button onClick={() => setCurrentView('trending')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'trending' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+                <TrendingUp size={14} className="sm:w-[18px] sm:h-[18px]" />
                 <span className="hidden sm:inline">Trending</span>
-                <span className="sm:hidden">🔥</span>
+                <span className="sm:hidden text-base">🔥</span>
               </button>
             </div>
             {currentView === 'markets' && (
@@ -1111,7 +1111,7 @@ export default function OutcomeBazaar() {
             )}
           </div>
           {currentView === 'markets' && (
-            <div className="flex gap-2 sm:gap-3 flex-wrap mt-3 sm:mt-4">
+            <div className="flex gap-2 sm:gap-3 flex-wrap mt-2 sm:mt-4">
               <div className="flex-1 min-w-0 sm:min-w-64 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" size={18} />
                 <input type="text" placeholder="Search markets..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-3 sm:pr-4 py-2.5 sm:py-2 bg-purple-900 bg-opacity-30 border border-purple-500 border-opacity-30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-purple-400 text-sm sm:text-base" />
