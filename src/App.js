@@ -29,6 +29,7 @@ export default function OutcomeBazaar() {
   const [activityHistory, setActivityHistory] = useState([]);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [showWalletPrompt, setShowWalletPrompt] = useState(false);
 
   const categories = ['All', 'Cricket', 'Politics', 'Economy', 'Space', 'Entertainment'];
   const POLYGON_CHAIN_ID = '0x89';
@@ -1247,7 +1248,7 @@ export default function OutcomeBazaar() {
 
                     <div className="flex items-center justify-between pt-4 border-t border-purple-500 border-opacity-30 mt-4">
                       <span className="text-sm text-purple-400">Ends: {new Date(market.endDate).toLocaleDateString('en-US')}</span>
-                      <button onClick={() => { if (!walletConnected) { setNetworkError('Please connect your wallet first'); return; } setSelectedMarket(market); }} className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-purple-500/50">
+                      <button onClick={() => { if (!walletConnected) { setShowWalletPrompt(true); return; } setSelectedMarket(market); }} className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-purple-500/50">
                         Trade
                       </button>
                     </div>
@@ -1558,7 +1559,7 @@ export default function OutcomeBazaar() {
 
                     <div className="flex items-center justify-between pt-4 border-t border-purple-500 border-opacity-30 mt-4">
                       <span className="text-sm text-purple-400">Ends: {new Date(market.endDate).toLocaleDateString('en-US')}</span>
-                      <button onClick={() => { if (!walletConnected) { setNetworkError('Please connect your wallet first'); return; } setSelectedMarket(market); }} className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-purple-500/50">
+                      <button onClick={() => { if (!walletConnected) { setShowWalletPrompt(true); return; } setSelectedMarket(market); }} className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-purple-500/50">
                         Trade
                       </button>
                     </div>
@@ -1760,6 +1761,43 @@ export default function OutcomeBazaar() {
                 className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all shadow-lg"
               >
                 Submit Suggestion
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Wallet Connection Prompt Modal */}
+      {showWalletPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl max-w-md w-full p-6 shadow-2xl border border-purple-500 border-opacity-30">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                <Wallet className="text-white" size={24} />
+              </div>
+              <h2 className="text-xl font-bold text-white">Connect Wallet Required</h2>
+            </div>
+
+            <p className="text-purple-200 mb-6">
+              Please connect your wallet to place trades and interact with the prediction markets.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowWalletPrompt(false);
+                  connectWallet();
+                }}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-purple-500/50 flex items-center justify-center gap-2"
+              >
+                <Wallet size={18} />
+                Connect Wallet
+              </button>
+              <button
+                onClick={() => setShowWalletPrompt(false)}
+                className="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </div>
