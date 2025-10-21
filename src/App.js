@@ -708,19 +708,36 @@ export default function OutcomeBazaar() {
 
       // Show success modal instead of auto-closing
       setTimeout(() => {
-        setTradeSuccessData({
+        console.log('🎉 TRADE SUCCESS - Showing success modal');
+        console.log('Market:', selectedMarket.title);
+        console.log('Outcome:', betType);
+        console.log('Shares:', shares);
+        console.log('Amount spent:', amount);
+
+        // Store success data BEFORE closing trade modal
+        const successData = {
           marketTitle: selectedMarket.title,
           outcome: betType,
           shares: shares,
           amountSpent: amount,
           txHash: mockTxHash
-        });
-        setShowTradeSuccessModal(true);
+        };
+
+        console.log('Setting success data:', successData);
+        setTradeSuccessData(successData);
+
+        // Close trade modal first
         setTxStatus('');
         setTxHash('');
         setSelectedMarket(null);
         setBetAmount('');
         setNetworkError('');
+
+        // Then show success modal after a tiny delay to ensure trade modal is closed
+        setTimeout(() => {
+          console.log('✅ Opening success modal now');
+          setShowTradeSuccessModal(true);
+        }, 100);
       }, 800);
     }, 2000);
   };
@@ -2066,7 +2083,12 @@ export default function OutcomeBazaar() {
       )}
 
       {/* Trade Success Modal */}
-      {showTradeSuccessModal && tradeSuccessData && (
+      {showTradeSuccessModal && tradeSuccessData && (() => {
+        console.log('📱 RENDERING SUCCESS MODAL', {
+          showTradeSuccessModal,
+          tradeSuccessData
+        });
+        return (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl max-w-md w-full shadow-2xl border border-purple-500 border-opacity-30 flex flex-col max-h-[85vh]">
             {/* Modal Header - Fixed */}
@@ -2145,7 +2167,8 @@ export default function OutcomeBazaar() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
