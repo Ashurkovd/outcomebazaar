@@ -312,7 +312,22 @@ export default function OutcomeBazaar() {
     }
   ]);
 
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
   const connectWallet = async () => {
+    // Check if on mobile and MetaMask is not injected
+    if (isMobile() && typeof window.ethereum === 'undefined') {
+      // Deep link to MetaMask app with current URL
+      const currentUrl = window.location.href;
+      const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
+
+      // Open MetaMask app
+      window.location.href = metamaskDeepLink;
+      return;
+    }
+
     if (typeof window.ethereum === 'undefined') {
       setNetworkError('Please install MetaMask to use this dApp');
       return;
@@ -1779,7 +1794,9 @@ export default function OutcomeBazaar() {
             </div>
 
             <p className="text-purple-200 mb-6">
-              Please connect your wallet to place trades and interact with the prediction markets.
+              {isMobile() && typeof window.ethereum === 'undefined'
+                ? "Clicking Connect will open MetaMask app. If you don't have MetaMask, you'll be redirected to install it."
+                : "Please connect your wallet to place trades and interact with the prediction markets."}
             </p>
 
             <div className="flex gap-3">
