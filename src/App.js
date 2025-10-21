@@ -1595,9 +1595,15 @@ export default function OutcomeBazaar() {
       </main>
       {selectedMarket && (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl max-w-md w-full p-6 shadow-2xl border border-purple-500 border-opacity-30">
-            <h2 className="text-xl font-bold text-white mb-4">Place Your Trade</h2>
-            <p className="text-purple-200 mb-4 text-sm">{selectedMarket.title}</p>
+          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl max-w-md w-full shadow-2xl border border-purple-500 border-opacity-30 flex flex-col max-h-[85vh]">
+            {/* Modal Header - Fixed */}
+            <div className="p-6 pb-4 flex-shrink-0">
+              <h2 className="text-xl font-bold text-white mb-2">Place Your Trade</h2>
+              <p className="text-purple-200 text-sm">{selectedMarket.title}</p>
+            </div>
+
+            {/* Modal Body - Scrollable */}
+            <div className="px-6 overflow-y-auto flex-1" style={{WebkitOverflowScrolling: 'touch'}}>
             <div className="bg-black bg-opacity-30 rounded-lg p-3 mb-4 border border-purple-500 border-opacity-20">
               <div className="flex items-center gap-2 text-xs text-purple-300 mb-1">
                 <span>Contract:</span>
@@ -1706,13 +1712,18 @@ export default function OutcomeBazaar() {
                 </a>
               </div>
             )}
-            <div className="flex gap-3">
-              <button onClick={() => { setSelectedMarket(null); setBetAmount(''); setTxStatus(''); setTxHash(''); }} className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
-                Cancel
-              </button>
-              <button onClick={placeBet} disabled={!betAmount || parseFloat(betAmount) <= 0 || parseFloat(betAmount) > usdtBalance || txStatus === 'pending'} className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
-                {txStatus === 'pending' ? 'Processing...' : 'Confirm Trade'}
-              </button>
+            </div>
+
+            {/* Modal Footer - Sticky */}
+            <div className="p-6 pt-4 flex-shrink-0 border-t border-purple-500 border-opacity-20">
+              <div className="flex gap-3">
+                <button onClick={() => { setSelectedMarket(null); setBetAmount(''); setTxStatus(''); setTxHash(''); }} className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
+                  Cancel
+                </button>
+                <button onClick={placeBet} disabled={!betAmount || parseFloat(betAmount) <= 0 || parseFloat(betAmount) > usdtBalance || txStatus === 'pending'} className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+                  {txStatus === 'pending' ? 'Processing...' : 'Confirm Trade'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1954,9 +1965,15 @@ export default function OutcomeBazaar() {
 
       {showCloseConfirmModal && closePositionData && (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl max-w-md w-full p-6 shadow-2xl border border-purple-500 border-opacity-30">
-            <h2 className="text-xl font-bold text-white mb-4">Close Position</h2>
-            <p className="text-purple-200 mb-4 text-sm">{closePositionData.position.marketTitle}</p>
+          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl max-w-md w-full shadow-2xl border border-purple-500 border-opacity-30 flex flex-col max-h-[85vh]">
+            {/* Modal Header - Fixed */}
+            <div className="p-6 pb-4 flex-shrink-0">
+              <h2 className="text-xl font-bold text-white mb-2">Close Position</h2>
+              <p className="text-purple-200 text-sm">{closePositionData.position.marketTitle}</p>
+            </div>
+
+            {/* Modal Body - Scrollable */}
+            <div className="px-6 overflow-y-auto flex-1" style={{WebkitOverflowScrolling: 'touch'}}>
 
             <div className="bg-black bg-opacity-30 rounded-lg p-3 mb-4 border border-purple-500 border-opacity-20">
               <div className="flex items-center justify-between mb-2">
@@ -2011,23 +2028,27 @@ export default function OutcomeBazaar() {
                 </span>
               </div>
             </div>
+            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowCloseConfirmModal(false);
-                  setClosePositionData(null);
-                }}
-                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={executeClosePosition}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white rounded-lg font-medium transition-all shadow-lg"
-              >
-                Confirm Close
-              </button>
+            {/* Modal Footer - Sticky */}
+            <div className="p-6 pt-4 flex-shrink-0 border-t border-purple-500 border-opacity-20">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCloseConfirmModal(false);
+                    setClosePositionData(null);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeClosePosition}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white rounded-lg font-medium transition-all shadow-lg"
+                >
+                  Confirm Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
