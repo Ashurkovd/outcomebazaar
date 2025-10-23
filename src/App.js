@@ -501,11 +501,41 @@ export default function OutcomeBazaar() {
     setUserPositions(prev => [...prev, newPosition]);
 
     setTimeout(() => {
+      console.log('🎉 PARTIAL FILL SUCCESS - Showing success modal');
+      console.log('Market:', selectedMarket.title);
+      console.log('Outcome:', betType);
+      console.log('Shares filled:', shares);
+      console.log('Instant amount:', instantAmount);
+      console.log('Total paid:', totalPaid);
+
+      // Store success data for partial fill
+      const successData = {
+        marketTitle: selectedMarket.title,
+        outcome: betType,
+        shares: shares,
+        amountSpent: totalPaid,
+        txHash: mockTxHash,
+        isPartialFill: true,
+        requestedAmount: totalPaid,
+        filledAmount: instantAmount,
+        fillPercentage: (instantAmount / (totalPaid * (1 - FEE_PERCENTAGE / 100))) * 100
+      };
+
+      console.log('Setting partial fill success data:', successData);
+      setTradeSuccessData(successData);
+
+      // Close trade modal
       setTxStatus('');
       setTxHash('');
       setSelectedMarket(null);
       setBetAmount('');
       setNetworkError('');
+
+      // Show success modal
+      setTimeout(() => {
+        console.log('✅ Opening partial fill success modal');
+        setShowTradeSuccessModal(true);
+      }, 100);
     }, 800);
   };
 
@@ -2094,20 +2124,66 @@ export default function OutcomeBazaar() {
             {/* Modal Header - Fixed */}
             <div className="p-6 pb-4 flex-shrink-0">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
-                  <CheckCircle className="text-white" size={28} />
-                </div>
-                <h2 className="text-xl font-bold text-white">Position Opened!</h2>
+                {tradeSuccessData.isPartialFill ? (
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
+                    <AlertCircle className="text-white" size={28} />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                    <CheckCircle className="text-white" size={28} />
+                  </div>
+                )}
+                <h2 className="text-xl font-bold text-white">
+                  {tradeSuccessData.isPartialFill ? 'Partial Fill - Trade Successful' : 'Position Opened!'}
+                </h2>
               </div>
               <p className="text-purple-200 text-sm">{tradeSuccessData.marketTitle}</p>
             </div>
 
             {/* Modal Body - Scrollable */}
             <div className="px-6 overflow-y-auto flex-1" style={{WebkitOverflowScrolling: 'touch'}}>
-              <div className="bg-green-500 bg-opacity-10 border border-green-500 border-opacity-30 rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
-                <CheckCircle className="text-green-400" size={20} />
-                <span className="text-green-300 text-sm font-semibold">Your position is now active in your portfolio</span>
-              </div>
+              {tradeSuccessData.isPartialFill ? (
+                <div className="bg-yellow-500 bg-opacity-10 border border-yellow-500 border-opacity-30 rounded-lg px-4 py-3 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle className="text-yellow-400" size={20} />
+                    <span className="text-yellow-300 text-sm font-semibold">Partial Fill - Not enough liquidity for full order</span>
+                  </div>
+                  <p className="text-yellow-200 text-xs mt-2">
+                    Your order was partially filled. The remaining amount has been placed as a limit order and will execute when liquidity becomes available.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-green-500 bg-opacity-10 border border-green-500 border-opacity-30 rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
+                  <CheckCircle className="text-green-400" size={20} />
+                  <span className="text-green-300 text-sm font-semibold">Your position is now active in your portfolio</span>
+                </div>
+              )}
+
+              {tradeSuccessData.isPartialFill && (
+                <div className="bg-yellow-500 bg-opacity-10 border border-yellow-500 border-opacity-30 rounded-lg p-4 mb-4">
+                  <div className="text-sm font-semibold text-yellow-300 mb-3">Partial Fill Details</div>
+
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-purple-300">Requested amount:</span>
+                    <span className="font-semibold text-white">{formatUSDT(tradeSuccessData.requestedAmount)}</span>
+                  </div>
+
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-purple-300">Filled amount:</span>
+                    <span className="font-semibold text-yellow-300">{formatUSDT(tradeSuccessData.filledAmount)}</span>
+                  </div>
+
+                  <div className="flex justify-between text-sm mb-2 pb-2 border-b border-yellow-500 border-opacity-20">
+                    <span className="text-purple-300">Fill percentage:</span>
+                    <span className="font-semibold text-yellow-300">{tradeSuccessData.fillPercentage.toFixed(1)}%</span>
+                  </div>
+
+                  <div className="flex justify-between text-sm mt-2">
+                    <span className="text-purple-300">Remaining (limit order):</span>
+                    <span className="font-semibold text-white">{formatUSDT(tradeSuccessData.requestedAmount - tradeSuccessData.filledAmount)}</span>
+                  </div>
+                </div>
+              )}
 
               <div className="bg-black bg-opacity-30 rounded-lg p-4 mb-4 border border-purple-500 border-opacity-20">
                 <div className="flex justify-between text-sm mb-3 pb-3 border-b border-purple-500 border-opacity-20">
@@ -2122,12 +2198,12 @@ export default function OutcomeBazaar() {
                 </div>
 
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-purple-300">Shares purchased:</span>
+                  <span className="text-purple-300">Shares {tradeSuccessData.isPartialFill ? 'filled' : 'purchased'}:</span>
                   <span className="font-semibold text-white">{tradeSuccessData.shares.toFixed(2)}</span>
                 </div>
 
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-purple-300">Amount spent:</span>
+                  <span className="text-purple-300">Total amount paid:</span>
                   <span className="font-semibold text-white">{formatUSDT(tradeSuccessData.amountSpent)}</span>
                 </div>
               </div>
