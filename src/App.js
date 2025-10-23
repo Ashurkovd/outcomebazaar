@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Users, Wallet, Search, ExternalLink, AlertCircle, CheckCircle, PieChart, Clock, Plus, BarChart3, Activity } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { useWallet } from './hooks/useWallet';
 
 export default function OutcomeBazaar() {
-  const [walletAddress, setWalletAddress] = useState('');
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [usdtBalance, setUsdtBalance] = useState(0);
-  const [networkError, setNetworkError] = useState('');
-  const [isPolygon, setIsPolygon] = useState(false);
+  const {
+    walletAddress,
+    walletConnected,
+    balance: usdtBalance,
+    isPolygon,
+    error: networkError,
+    connect: connectWallet,
+    disconnect: disconnectWallet,
+    switchToPolygon,
+  } = useWallet();
   const [currentView, setCurrentView] = useState('markets');
   const [userPositions, setUserPositions] = useState([]);
   const [limitOrders, setLimitOrders] = useState([]);
@@ -34,7 +40,6 @@ export default function OutcomeBazaar() {
   const [tradeSuccessData, setTradeSuccessData] = useState(null);
 
   const categories = ['All', 'Cricket', 'Politics', 'Economy', 'Space', 'Entertainment'];
-  const POLYGON_CHAIN_ID = '0x89';
   const FEE_PERCENTAGE = 2;
   const MAX_POOL_USAGE = 0.7;
 
@@ -314,83 +319,6 @@ export default function OutcomeBazaar() {
     }
   ]);
 
-  const isMobile = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  };
-
-  const connectWallet = async () => {
-    // Check if on mobile and MetaMask is not injected
-    if (isMobile() && typeof window.ethereum === 'undefined') {
-      // Deep link to MetaMask app with current URL
-      const currentUrl = window.location.href;
-      const metamaskDeepLink = `https://metamask.app.link/dapp/${currentUrl.replace(/^https?:\/\//, '')}`;
-
-      // Open MetaMask app
-      window.location.href = metamaskDeepLink;
-      return;
-    }
-
-    if (typeof window.ethereum === 'undefined') {
-      setNetworkError('Please install MetaMask to use this dApp');
-      return;
-    }
-    try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      if (chainId !== POLYGON_CHAIN_ID) {
-        setNetworkError('Please switch to Polygon network');
-        setIsPolygon(false);
-        await switchToPolygon();
-      } else {
-        setIsPolygon(true);
-        setNetworkError('');
-      }
-      setWalletAddress(accounts[0]);
-      setWalletConnected(true);
-      const mockBalance = Math.floor(Math.random() * 10000) + 1000;
-      setUsdtBalance(mockBalance);
-    } catch (error) {
-      console.error('Error connecting wallet:', error);
-      setNetworkError('Failed to connect wallet');
-    }
-  };
-
-  const switchToPolygon = async () => {
-    try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: POLYGON_CHAIN_ID }],
-      });
-      setIsPolygon(true);
-      setNetworkError('');
-    } catch (switchError) {
-      if (switchError.code === 4902) {
-        try {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: POLYGON_CHAIN_ID,
-              chainName: 'Polygon Mainnet',
-              nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
-              rpcUrls: ['https://polygon-rpc.com/'],
-              blockExplorerUrls: ['https://polygonscan.com/']
-            }]
-          });
-          setIsPolygon(true);
-          setNetworkError('');
-        } catch (addError) {
-          setNetworkError('Failed to add Polygon network');
-        }
-      }
-    }
-  };
-
-  const disconnectWallet = () => {
-    setWalletAddress('');
-    setWalletConnected(false);
-    setUsdtBalance(0);
-    setIsPolygon(false);
-  };
 
   const formatAddress = (address) => `${address.slice(0, 6)}...${address.slice(-4)}`;
   const formatUSDT = (amount) => {
@@ -1045,25 +973,6 @@ export default function OutcomeBazaar() {
     alert('Market suggestion submitted! We\'ll review it soon.');
   };
 
-  useEffect(() => {
-    if (typeof window.ethereum !== 'undefined') {
-      window.ethereum.on('chainChanged', (chainId) => {
-        setIsPolygon(chainId === POLYGON_CHAIN_ID);
-        if (chainId !== POLYGON_CHAIN_ID) {
-          setNetworkError('Please switch to Polygon network');
-        } else {
-          setNetworkError('');
-        }
-      });
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length === 0) {
-          disconnectWallet();
-        } else {
-          setWalletAddress(accounts[0]);
-        }
-      });
-    }
-  }, []);
 
   // Auto-hide header on scroll down, show on scroll up
   useEffect(() => {
