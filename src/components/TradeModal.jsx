@@ -65,6 +65,39 @@ export const TradeModal = ({
             </div>
             <p className="text-sm text-purple-400 mt-2">Available: {formatUSDT(usdtBalance)}</p>
           </div>
+
+          {/* Low Liquidity Warning */}
+          {betAmount && (() => {
+            const amount = parseFloat(betAmount);
+            const fee = amount * (FEE_PERCENTAGE / 100);
+            const netAmount = amount - fee;
+
+            // Calculate available liquidity (95% of pool + order book)
+            const poolAvailable = selectedMarket.poolSeed * (1 - selectedMarket.poolUsage);
+            const orderBookDepth = selectedMarket.orderBookDepth || 0;
+            const maxLiquidity = (poolAvailable + orderBookDepth) * 0.95;
+
+            const isLiquidityInsufficient = netAmount > maxLiquidity;
+
+            if (isLiquidityInsufficient) {
+              return (
+                <div className="bg-orange-500 bg-opacity-20 border border-orange-500 border-opacity-30 rounded-lg px-4 py-3 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle className="text-orange-400" size={20} />
+                    <span className="text-orange-300 text-sm font-semibold">⚠️ Amount Too Large</span>
+                  </div>
+                  <p className="text-orange-200 text-xs mb-2">
+                    Please reduce your trade amount. This amount exceeds available market liquidity.
+                  </p>
+                  <p className="text-orange-300 text-xs font-semibold">
+                    Maximum available: ~{formatUSDT(maxLiquidity)}
+                  </p>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {betAmount && (() => {
             const slippage = calculateSlippageDetails();
             const amount = parseFloat(betAmount);
@@ -145,8 +178,43 @@ export const TradeModal = ({
             <button onClick={() => { setSelectedMarket(null); setBetAmount(''); setTxStatus(''); setTxHash(''); }} className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
               Cancel
             </button>
-            <button onClick={placeBet} disabled={!betAmount || parseFloat(betAmount) <= 0 || parseFloat(betAmount) > usdtBalance || txStatus === 'pending'} className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
-              {txStatus === 'pending' ? 'Processing...' : 'Confirm Trade'}
+            <button
+              onClick={placeBet}
+              disabled={(() => {
+                if (!betAmount || parseFloat(betAmount) <= 0 || parseFloat(betAmount) > usdtBalance || txStatus === 'pending') {
+                  return true;
+                }
+
+                // Check liquidity
+                const amount = parseFloat(betAmount);
+                const fee = amount * (FEE_PERCENTAGE / 100);
+                const netAmount = amount - fee;
+                const poolAvailable = selectedMarket.poolSeed * (1 - selectedMarket.poolUsage);
+                const orderBookDepth = selectedMarket.orderBookDepth || 0;
+                const maxLiquidity = (poolAvailable + orderBookDepth) * 0.95;
+
+                return netAmount > maxLiquidity;
+              })()}
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {(() => {
+                if (txStatus === 'pending') return 'Processing...';
+
+                if (betAmount) {
+                  const amount = parseFloat(betAmount);
+                  const fee = amount * (FEE_PERCENTAGE / 100);
+                  const netAmount = amount - fee;
+                  const poolAvailable = selectedMarket.poolSeed * (1 - selectedMarket.poolUsage);
+                  const orderBookDepth = selectedMarket.orderBookDepth || 0;
+                  const maxLiquidity = (poolAvailable + orderBookDepth) * 0.95;
+
+                  if (netAmount > maxLiquidity) {
+                    return 'Insufficient Liquidity';
+                  }
+                }
+
+                return 'Confirm Trade';
+              })()}
             </button>
           </div>
         </div>
