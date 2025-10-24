@@ -135,12 +135,15 @@ export const useWallet = () => {
     walletAddress,
     walletConnected,
     balance,
+    setBalance,
     isPolygon,
     error,
+    setError,
     loading,
     connect,
     disconnect,
     switchToPolygon,
     isConnected: walletConnected,
+    isMobile,
   };
 };

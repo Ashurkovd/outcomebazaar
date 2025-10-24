@@ -12,11 +12,14 @@ export default function OutcomeBazaar() {
     walletAddress,
     walletConnected,
     balance: usdtBalance,
+    setBalance: setUsdtBalance,
     isPolygon,
     error: networkError,
+    setError: setNetworkError,
     connect: connectWallet,
     disconnect: disconnectWallet,
     switchToPolygon,
+    isMobile,
   } = useWallet();
   const [currentView, setCurrentView] = useState('markets');
   const [userPositions, setUserPositions] = useState([]);
