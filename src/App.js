@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { MarketCard } from './components/MarketCard';
 import { TradeModal } from './components/TradeModal';
 import { Portfolio } from './components/Portfolio';
+import { MetaMaskInstallModal } from './components/MetaMaskInstallModal';
 
 export default function OutcomeBazaar() {
   const {
@@ -20,6 +21,7 @@ export default function OutcomeBazaar() {
     disconnect: disconnectWallet,
     switchToPolygon,
     isMobile,
+    getBrowserType,
   } = useWallet();
   const [currentView, setCurrentView] = useState('markets');
   const [userPositions, setUserPositions] = useState([]);
@@ -1730,6 +1732,14 @@ export default function OutcomeBazaar() {
         </div>
         );
       })()}
+
+      {/* MetaMask Install Modal */}
+      {networkError === 'metamask-required' && (
+        <MetaMaskInstallModal
+          browserType={getBrowserType()}
+          onClose={() => setNetworkError('')}
+        />
+      )}
     </div>
   );
 }

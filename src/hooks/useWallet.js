@@ -14,6 +14,25 @@ export const useWallet = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }, []);
 
+  const isIPhone = useCallback(() => {
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }, []);
+
+  const isSafari = useCallback(() => {
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  }, []);
+
+  const isDesktop = useCallback(() => {
+    return !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }, []);
+
+  const getBrowserType = useCallback(() => {
+    if (isIPhone()) return 'iphone';
+    if (isSafari() && isDesktop()) return 'safari-desktop';
+    if (isDesktop()) return 'desktop';
+    return 'mobile';
+  }, [isIPhone, isSafari, isDesktop]);
+
   const switchToPolygon = useCallback(async () => {
     try {
       await window.ethereum.request({
@@ -61,7 +80,7 @@ export const useWallet = () => {
     }
 
     if (typeof window.ethereum === 'undefined') {
-      setError('Please install MetaMask to use this dApp');
+      setError('metamask-required');
       setLoading(false);
       return;
     }
@@ -145,5 +164,9 @@ export const useWallet = () => {
     switchToPolygon,
     isConnected: walletConnected,
     isMobile,
+    isIPhone,
+    isSafari,
+    isDesktop,
+    getBrowserType,
   };
 };
