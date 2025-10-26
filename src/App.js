@@ -1080,6 +1080,7 @@ export default function OutcomeBazaar() {
                   walletConnected={walletConnected}
                   setShowWalletPrompt={setShowWalletPrompt}
                   setSelectedMarket={setSelectedMarket}
+                  setBetType={setBetType}
                   formatUSDT={formatUSDT}
                 />
               ))}
