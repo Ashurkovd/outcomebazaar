@@ -23,7 +23,13 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "compile": "hardhat compile",
+    "deploy:mumbai": "hardhat run scripts/deploy.js --network mumbai",
+    "deploy:polygon": "hardhat run scripts/deploy.js --network polygon",
+    "create-market:mumbai": "hardhat run scripts/create-test-market.js --network mumbai",
+    "create-market:polygon": "hardhat run scripts/create-test-market.js --network polygon",
+    "verify": "hardhat verify --network polygon"
   },
   "eslintConfig": {
     "extends": [
@@ -44,11 +50,19 @@
     ]
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-etherscan": "^3.1.7",
+    "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@playwright/test": "^1.56.0",
     "@synthetixio/synpress": "^4.1.1",
     "@synthetixio/synpress-metamask": "^0.0.13",
     "@tailwindcss/postcss": "^4.1.14",
     "autoprefixer": "^10.4.21",
+    "chai": "^4.3.10",
+    "dotenv": "^16.3.1",
+    "ethereum-waffle": "^4.0.10",
+    "hardhat": "^2.19.5",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18"
   }
