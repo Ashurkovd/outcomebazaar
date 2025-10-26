@@ -1035,8 +1035,8 @@ export default function OutcomeBazaar() {
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8 overflow-x-hidden">
         {currentView === 'markets' && (
           <>
-            {/* How It Works Section */}
-            <HowItWorks />
+            {/* How It Works Section - Show only to non-connected users */}
+            {!walletConnected && <HowItWorks />}
 
             {/* Stats Section */}
             <div id="markets" className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
