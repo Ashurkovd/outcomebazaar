@@ -7,6 +7,7 @@ import { MarketCard } from './components/MarketCard';
 import { TradeModal } from './components/TradeModal';
 import { Portfolio } from './components/Portfolio';
 import { MetaMaskInstallModal } from './components/MetaMaskInstallModal';
+import { HowItWorks } from './components/HowItWorks';
 
 export default function OutcomeBazaar() {
   const {
@@ -1034,7 +1035,11 @@ export default function OutcomeBazaar() {
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8 overflow-x-hidden">
         {currentView === 'markets' && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            {/* How It Works Section */}
+            <HowItWorks />
+
+            {/* Stats Section */}
+            <div id="markets" className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-6 border border-purple-500 border-opacity-30">
                 <div className="flex items-center justify-between">
                   <div>
