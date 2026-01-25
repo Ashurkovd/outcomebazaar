@@ -769,7 +769,15 @@ export default function OutcomeBazaar() {
   const filteredMarkets = markets.filter(market => {
     const matchesSearch = market.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || market.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const isActive = market.state === 0; // Only show active markets (0=Active, 1=Resolved, 2=Cancelled)
+    return matchesSearch && matchesCategory && isActive;
+  });
+
+  const resolvedMarkets = markets.filter(market => {
+    const matchesSearch = market.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || market.category === selectedCategory;
+    const isResolved = market.state === 1; // Show resolved markets
+    return matchesSearch && matchesCategory && isResolved;
   });
 
   const calculatePortfolioValue = () => {
@@ -1243,19 +1251,59 @@ export default function OutcomeBazaar() {
                 <div className="text-sm text-purple-300">Only 1.5% trading fee on Polygon</div>
               </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredMarkets.map(market => (
-                <MarketCard
-                  key={`${market.id}-${market.yesPrice}-${market.noPrice}`}
-                  market={market}
-                  walletConnected={walletConnected}
-                  setShowWalletPrompt={setShowWalletPrompt}
-                  setSelectedMarket={setSelectedMarket}
-                  setBetType={setBetType}
-                  formatUSDT={formatUSDT}
-                />
-              ))}
+
+            {/* Active Markets Section */}
+            <div className="flex items-center gap-3 mb-6 mt-8">
+              <h2 className="text-2xl font-bold text-white">Active Markets</h2>
+              <span className="px-3 py-1 bg-green-500 bg-opacity-20 text-green-300 text-sm font-semibold rounded-full">
+                {filteredMarkets.length} Open
+              </span>
             </div>
+            {filteredMarkets.length === 0 ? (
+              <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-12 border border-purple-500 border-opacity-30 text-center mb-8">
+                <h3 className="text-xl font-semibold text-white mb-2">No Active Markets</h3>
+                <p className="text-purple-300">All markets have been resolved. Check Past Markets below to see outcomes.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {filteredMarkets.map(market => (
+                  <MarketCard
+                    key={`${market.id}-${market.yesPrice}-${market.noPrice}`}
+                    market={market}
+                    walletConnected={walletConnected}
+                    setShowWalletPrompt={setShowWalletPrompt}
+                    setSelectedMarket={setSelectedMarket}
+                    setBetType={setBetType}
+                    formatUSDT={formatUSDT}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Past Markets Section */}
+            {resolvedMarkets.length > 0 && (
+              <div className="mt-12">
+                <div className="flex items-center gap-3 mb-6">
+                  <h2 className="text-2xl font-bold text-white">Past Markets</h2>
+                  <span className="px-3 py-1 bg-blue-500 bg-opacity-20 text-blue-300 text-sm font-semibold rounded-full">
+                    {resolvedMarkets.length} Resolved
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {resolvedMarkets.map(market => (
+                    <MarketCard
+                      key={`${market.id}-${market.yesPrice}-${market.noPrice}`}
+                      market={market}
+                      walletConnected={walletConnected}
+                      setShowWalletPrompt={setShowWalletPrompt}
+                      setSelectedMarket={setSelectedMarket}
+                      setBetType={setBetType}
+                      formatUSDT={formatUSDT}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
         {currentView === 'portfolio' && (
