@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Users, Wallet, Search, ExternalLink, AlertCircle, CheckCircle, PieChart, Clock, Plus, BarChart3, Activity } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useWallet } from './hooks/useWallet';
 import { Header } from './components/Header';
 import { MarketCard } from './components/MarketCard';
@@ -8,6 +8,13 @@ import { TradeModal } from './components/TradeModal';
 import { Portfolio } from './components/Portfolio';
 import { MetaMaskInstallModal } from './components/MetaMaskInstallModal';
 import { HowItWorks } from './components/HowItWorks';
+import Footer from './components/Footer';
+import TermsAcceptanceModal from './components/TermsAcceptanceModal';
+import LegalDocModal from './components/LegalDocModal';
+import TermsContent from './components/TermsContent';
+import PrivacyContent from './components/PrivacyContent';
+import { initAnalytics } from './utils/analytics';
+import { useAnalytics, useViewTracking } from './hooks/useAnalytics';
 
 export default function OutcomeBazaar() {
   const {
@@ -15,6 +22,7 @@ export default function OutcomeBazaar() {
     walletConnected,
     balance: usdtBalance,
     setBalance: setUsdtBalance,
+    refreshBalance,
     isPolygon,
     error: networkError,
     setError: setNetworkError,
@@ -23,8 +31,19 @@ export default function OutcomeBazaar() {
     switchToPolygon,
     isMobile,
     getBrowserType,
+    provider,
+    signer,
+    contracts,
+    getMarketContract,
   } = useWallet();
+
+  // Analytics hook
+  const analytics = useAnalytics();
+
   const [currentView, setCurrentView] = useState('markets');
+
+  // Track view changes
+  useViewTracking(currentView);
   const [userPositions, setUserPositions] = useState([]);
   const [limitOrders, setLimitOrders] = useState([]);
   const [selectedMarket, setSelectedMarket] = useState(null);
@@ -48,9 +67,14 @@ export default function OutcomeBazaar() {
   const [showWalletPrompt, setShowWalletPrompt] = useState(false);
   const [showTradeSuccessModal, setShowTradeSuccessModal] = useState(false);
   const [tradeSuccessData, setTradeSuccessData] = useState(null);
+  const [marketsLoading, setMarketsLoading] = useState(false);
+  const [marketsError, setMarketsError] = useState(null);
+  const [showTermsAcceptance, setShowTermsAcceptance] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const categories = ['All', 'Cricket', 'Politics', 'Economy', 'Space', 'Entertainment'];
-  const FEE_PERCENTAGE = 2;
+  const FEE_PERCENTAGE = 1.5; // Matches smart contract: 150 basis points / 10000 = 1.5%
   const MAX_POOL_USAGE = 0.7;
 
   // TODO: Before production, change BASE_IMPACT from 1.5 to 1.0
@@ -66,269 +90,177 @@ export default function OutcomeBazaar() {
     return Math.min(impact, MAX_IMPACT);
   };
 
-  const [markets, setMarkets] = useState([
-    {
-      id: 1,
-      title: "Will India win the 2025 ICC Champions Trophy?",
-      category: "Cricket",
-      contractAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-      yesPrice: 0.68,
-      noPrice: 0.32,
-      totalLiquidity: 125000,
-      endDate: "2025-03-09",
-      participants: 15420,
-      trending: true,
-      yesShares: 850000,
-      noShares: 1250000,
-      priceHistory: [
-        { time: '1D', price: 0.45 },
-        { time: '2D', price: 0.52 },
-        { time: '3D', price: 0.58 },
-        { time: '4D', price: 0.65 },
-        { time: '5D', price: 0.68 }
-      ],
-      poolSeed: 2500,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 3200,
-      volume24h: 4250
-    },
-    {
-      id: 2,
-      title: "Will Nifty 50 cross 25,000 by December 2025?",
-      category: "Economy",
-      contractAddress: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
-      yesPrice: 0.55,
-      noPrice: 0.45,
-      totalLiquidity: 280000,
-      endDate: "2025-12-31",
-      participants: 8934,
-      trending: true,
-      yesShares: 1100000,
-      noShares: 900000,
-      priceHistory: [
-        { time: '1D', price: 0.38 },
-        { time: '2D', price: 0.42 },
-        { time: '3D', price: 0.48 },
-        { time: '4D', price: 0.52 },
-        { time: '5D', price: 0.55 }
-      ],
-      poolSeed: 2000,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 4100,
-      volume24h: 3180
-    },
-    {
-      id: 3,
-      title: "Will BJP win majority in upcoming state elections?",
-      category: "Politics",
-      contractAddress: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-      yesPrice: 0.62,
-      noPrice: 0.38,
-      totalLiquidity: 450000,
-      endDate: "2025-11-15",
-      participants: 22156,
-      trending: false,
-      yesShares: 1550000,
-      noShares: 950000,
-      priceHistory: [
-        { time: '1D', price: 0.72 },
-        { time: '2D', price: 0.68 },
-        { time: '3D', price: 0.65 },
-        { time: '4D', price: 0.63 },
-        { time: '5D', price: 0.62 }
-      ],
-      poolSeed: 2000,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 2800,
-      volume24h: 5420
-    },
-    {
-      id: 4,
-      title: "Will India launch Gaganyaan mission in 2025?",
-      category: "Space",
-      contractAddress: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
-      yesPrice: 0.41,
-      noPrice: 0.59,
-      totalLiquidity: 56000,
-      endDate: "2025-12-31",
-      participants: 4521,
-      trending: false,
-      yesShares: 410000,
-      noShares: 590000,
-      priceHistory: [
-        { time: '1D', price: 0.55 },
-        { time: '2D', price: 0.48 },
-        { time: '3D', price: 0.44 },
-        { time: '4D', price: 0.42 },
-        { time: '5D', price: 0.41 }
-      ],
-      poolSeed: 1500,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 1200,
-      volume24h: 1890
-    },
-    {
-      id: 5,
-      title: "Will RCB win IPL 2025?",
-      category: "Cricket",
-      contractAddress: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-      yesPrice: 0.18,
-      noPrice: 0.82,
-      totalLiquidity: 187000,
-      endDate: "2025-05-30",
-      participants: 31240,
-      trending: true,
-      yesShares: 338600,
-      noShares: 1542400,
-      priceHistory: [
-        { time: '1D', price: 0.08 },
-        { time: '2D', price: 0.11 },
-        { time: '3D', price: 0.14 },
-        { time: '4D', price: 0.16 },
-        { time: '5D', price: 0.18 }
-      ],
-      poolSeed: 2500,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 4500,
-      volume24h: 2760
-    },
-    {
-      id: 6,
-      title: "Will Jawan 2 release in 2025?",
-      category: "Entertainment",
-      contractAddress: "0x9Aa5d462A9F2C3c5e8D4c8F1B3e7A2d9C4b8E5f6",
-      yesPrice: 0.35,
-      noPrice: 0.65,
-      totalLiquidity: 89000,
-      endDate: "2025-12-31",
-      participants: 12450,
-      trending: true,
-      yesShares: 450000,
-      noShares: 850000,
-      priceHistory: [
-        { time: '1D', price: 0.28 },
-        { time: '2D', price: 0.30 },
-        { time: '3D', price: 0.32 },
-        { time: '4D', price: 0.34 },
-        { time: '5D', price: 0.35 }
-      ],
-      poolSeed: 1500,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 1800,
-      volume24h: 2340
-    },
-    {
-      id: 7,
-      title: "Will Reliance acquire Disney+ Hotstar deal by Q2 2025?",
-      category: "Economy",
-      contractAddress: "0x7Bb6c563D4F9E8a6B2C9d5E3A8F1c7B4E9a6D2f8",
-      yesPrice: 0.72,
-      noPrice: 0.28,
-      totalLiquidity: 340000,
-      endDate: "2025-06-30",
-      participants: 18900,
-      trending: true,
-      yesShares: 1800000,
-      noShares: 700000,
-      priceHistory: [
-        { time: '1D', price: 0.58 },
-        { time: '2D', price: 0.63 },
-        { time: '3D', price: 0.67 },
-        { time: '4D', price: 0.70 },
-        { time: '5D', price: 0.72 }
-      ],
-      poolSeed: 2000,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 3500,
-      volume24h: 4100
-    },
-    {
-      id: 8,
-      title: "Will India's GDP growth exceed 7% in 2025?",
-      category: "Economy",
-      contractAddress: "0x3Cc8d674E9F2A5b7D3e8C9a1F4B7d2E8A9c5F3b6",
-      yesPrice: 0.58,
-      noPrice: 0.42,
-      totalLiquidity: 520000,
-      endDate: "2025-12-31",
-      participants: 25600,
-      trending: false,
-      yesShares: 1450000,
-      noShares: 1050000,
-      priceHistory: [
-        { time: '1D', price: 0.52 },
-        { time: '2D', price: 0.54 },
-        { time: '3D', price: 0.56 },
-        { time: '4D', price: 0.57 },
-        { time: '5D', price: 0.58 }
-      ],
-      poolSeed: 2000,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 3900,
-      volume24h: 3850
-    },
-    {
-      id: 9,
-      title: "Will Virat Kohli score 100th international century in 2025?",
-      category: "Cricket",
-      contractAddress: "0x5Dd9e785C3F1B2a8E4c9D6F2A7b8E3C5d9F4A1b7",
-      yesPrice: 0.44,
-      noPrice: 0.56,
-      totalLiquidity: 215000,
-      endDate: "2025-12-31",
-      participants: 28340,
-      trending: true,
-      yesShares: 880000,
-      noShares: 1120000,
-      priceHistory: [
-        { time: '1D', price: 0.38 },
-        { time: '2D', price: 0.40 },
-        { time: '3D', price: 0.41 },
-        { time: '4D', price: 0.43 },
-        { time: '5D', price: 0.44 }
-      ],
-      poolSeed: 2500,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 3400,
-      volume24h: 2950
-    },
-    {
-      id: 10,
-      title: "Will Indian rupee trade below 80 against USD by end of 2025?",
-      category: "Economy",
-      contractAddress: "0x8Ee7f896D2B3c5A8F4e9C1d7A3b8F2E9c6D5A4b1",
-      yesPrice: 0.31,
-      noPrice: 0.69,
-      totalLiquidity: 178000,
-      endDate: "2025-12-31",
-      participants: 14780,
-      trending: false,
-      yesShares: 620000,
-      noShares: 1380000,
-      priceHistory: [
-        { time: '1D', price: 0.35 },
-        { time: '2D', price: 0.34 },
-        { time: '3D', price: 0.33 },
-        { time: '4D', price: 0.32 },
-        { time: '5D', price: 0.31 }
-      ],
-      poolSeed: 2000,
-      poolUsage: 0,
-      maxPoolUsage: 0.7,
-      orderBookDepth: 2400,
-      volume24h: 2420
-    }
-  ]);
+  const [markets, setMarkets] = useState([]);
 
+  // Load markets from blockchain
+  const loadMarkets = async () => {
+    if (!contracts.factory || !provider) {
+      console.log('⏸ Waiting for contracts to initialize...');
+      return;
+    }
+
+    try {
+      setMarketsLoading(true);
+      setMarketsError(null);
+      console.log('🔍 Loading markets from blockchain...');
+
+      // Get market count using direct contract call (event queries timeout on Amoy)
+      const count = await contracts.factory.getMarketCount();
+      const marketCount = Number(count);
+      console.log(`📊 Found ${marketCount} markets`);
+
+      const loadedMarkets = [];
+
+      // Load each market
+      for (let i = 0; i < marketCount; i++) {
+        try {
+          const marketAddress = await contracts.factory.markets(i);
+          const marketContract = getMarketContract(marketAddress, false);
+
+          if (!marketContract) {
+            console.warn(`⚠️ Could not create contract for market ${i}`);
+            continue;
+          }
+
+          // Get market info
+          const info = await marketContract.getMarketInfo();
+
+          // Convert prices from basis points (out of 10000) to decimal (0.0-1.0)
+          // Contract returns: 5000 = 0.50 (50%), 6800 = 0.68 (68%), etc.
+          const yesPrice = parseFloat(info._yesPrice) / 10000;
+          const noPrice = parseFloat(info._noPrice) / 10000;
+          // Convert pool amounts from 6 decimals (USDT)
+          const yesPool = parseFloat(info._yesPool) / 1e6;
+          const noPool = parseFloat(info._noPool) / 1e6;
+          const totalLiquidity = yesPool + noPool;
+
+          // Convert end time to date string
+          const endDate = new Date(Number(info._endTime) * 1000).toISOString().split('T')[0];
+
+          // Generate price history based on actual market duration
+          const generatePriceHistory = (endTime, currentPrice) => {
+            const now = Date.now();
+            const endTimeMs = Number(endTime) * 1000;
+            const durationMs = endTimeMs - now;
+            const durationHours = durationMs / (1000 * 60 * 60);
+            const durationDays = durationHours / 24;
+
+            let dataPoints = 5;
+            let timeUnit = 'D';
+            let intervalMs;
+
+            // Determine appropriate time scale and intervals
+            if (durationDays < 1) {
+              // Less than 1 day - show hours
+              dataPoints = Math.min(Math.max(Math.ceil(durationHours), 3), 12);
+              timeUnit = 'h';
+              intervalMs = durationMs / dataPoints;
+            } else if (durationDays <= 7) {
+              // 1-7 days - show days
+              dataPoints = Math.min(Math.max(Math.ceil(durationDays), 3), 7);
+              timeUnit = 'D';
+              intervalMs = durationMs / dataPoints;
+            } else if (durationDays <= 30) {
+              // 1-4 weeks - show every few days
+              dataPoints = Math.min(Math.max(Math.ceil(durationDays / 3), 5), 10);
+              timeUnit = 'D';
+              intervalMs = durationMs / dataPoints;
+            } else {
+              // More than 30 days - show weeks
+              const durationWeeks = durationDays / 7;
+              dataPoints = Math.min(Math.max(Math.ceil(durationWeeks), 4), 8);
+              timeUnit = 'W';
+              intervalMs = durationMs / dataPoints;
+            }
+
+            // Generate data points from now to end time
+            const history = [];
+            for (let i = 0; i < dataPoints; i++) {
+              const timeMs = now + (intervalMs * i);
+              const progress = i / (dataPoints - 1); // 0 to 1
+
+              // Calculate label
+              let label;
+              if (timeUnit === 'h') {
+                const hoursFromNow = Math.round((timeMs - now) / (1000 * 60 * 60));
+                label = `${hoursFromNow}h`;
+              } else if (timeUnit === 'D') {
+                const daysFromNow = Math.round((timeMs - now) / (1000 * 60 * 60 * 24));
+                label = `${daysFromNow}D`;
+              } else if (timeUnit === 'W') {
+                const weeksFromNow = Math.round((timeMs - now) / (1000 * 60 * 60 * 24 * 7));
+                label = `${weeksFromNow}W`;
+              }
+
+              // Generate mock price variation (slight increase toward current price)
+              // Start lower and gradually reach current price
+              const priceVariation = currentPrice * (0.7 + (progress * 0.3));
+              const price = Math.max(0.01, Math.min(0.99, priceVariation));
+
+              history.push({ time: label, price });
+            }
+
+            return history;
+          };
+
+          const priceHistory = generatePriceHistory(info._endTime, yesPrice);
+
+          // Determine category from question (simple heuristic)
+          let category = 'Economy'; // default
+          const question = info._question.toLowerCase();
+          if (question.includes('cricket') || question.includes('ipl') || question.includes('india win')) {
+            category = 'Cricket';
+          } else if (question.includes('bjp') || question.includes('election') || question.includes('politics')) {
+            category = 'Politics';
+          } else if (question.includes('space') || question.includes('isro') || question.includes('gaganyaan')) {
+            category = 'Space';
+          } else if (question.includes('movie') || question.includes('film') || question.includes('release')) {
+            category = 'Entertainment';
+          }
+
+          // Build market object matching existing structure
+          const market = {
+            id: i + 1,
+            title: info._question,
+            category: category,
+            contractAddress: marketAddress,
+            state: Number(info._state), // 0=Active, 1=Resolved, 2=Cancelled
+            outcome: info._outcome, // true=YES, false=NO (only valid when resolved)
+            yesPrice: yesPrice,
+            noPrice: noPrice,
+            totalLiquidity: totalLiquidity,
+            endDate: endDate,
+            participants: 0, // Will be populated from events later
+            trending: totalLiquidity > 500, // Mark as trending if liquidity > 500
+            yesShares: yesPool * 1000000, // Convert to shares format
+            noShares: noPool * 1000000,
+            priceHistory: priceHistory,
+            poolSeed: totalLiquidity, // Use actual blockchain liquidity
+            poolUsage: 0, // Calculate if needed
+            maxPoolUsage: 0.7,
+            orderBookDepth: 0, // No separate order book - using AMM pools only
+            volume24h: 0, // Will be calculated from events later
+            yesPool: yesPool, // Store individual pool amounts
+            noPool: noPool
+          };
+
+          loadedMarkets.push(market);
+          console.log(`✅ Loaded market ${i + 1}: ${info._question.substring(0, 50)}...`);
+        } catch (error) {
+          console.error(`❌ Error loading market ${i}:`, error);
+        }
+      }
+
+      // Reverse to show newest first
+      setMarkets(loadedMarkets.reverse());
+      console.log(`✅ Successfully loaded ${loadedMarkets.length} markets`);
+    } catch (error) {
+      console.error('❌ Error loading markets:', error);
+      setMarketsError('Failed to load markets. Please refresh the page.');
+    } finally {
+      setMarketsLoading(false);
+    }
+  };
 
   const formatAddress = (address) => `${address.slice(0, 6)}...${address.slice(-4)}`;
   const formatUSDT = (amount) => {
@@ -347,11 +279,31 @@ export default function OutcomeBazaar() {
     const netAmount = amount - fee;
 
     const startPrice = betType === 'yes' ? selectedMarket.yesPrice : selectedMarket.noPrice;
-    const priceImpact = calculatePriceImpact(netAmount, selectedMarket.totalLiquidity);
-    const endPrice = Math.min(0.99, Math.max(0.01, startPrice + priceImpact));
-    const avgPrice = (startPrice + endPrice) / 2;
-    const shares = netAmount / avgPrice;
+
+    // Use constant product AMM formula (matching smart contract)
+    const k = selectedMarket.yesPool * selectedMarket.noPool;
+    let newYesPool, newNoPool, shares;
+
+    if (betType === 'yes') {
+      // Buying YES: add to NO pool, remove from YES pool
+      newNoPool = selectedMarket.noPool + netAmount;
+      newYesPool = k / newNoPool;
+      shares = selectedMarket.yesPool - newYesPool;
+    } else {
+      // Buying NO: add to YES pool, remove from NO pool
+      newYesPool = selectedMarket.yesPool + netAmount;
+      newNoPool = k / newYesPool;
+      shares = selectedMarket.noPool - newNoPool;
+    }
+
+    // Calculate new price after trade
+    const totalPool = newYesPool + newNoPool;
+    const endPrice = betType === 'yes' ? (newNoPool / totalPool) : (newYesPool / totalPool);
+
+    // Average price and slippage
+    const avgPrice = netAmount / shares;
     const slippagePercent = ((avgPrice - startPrice) / startPrice * 100);
+    const priceImpact = endPrice - startPrice;
 
     return { startPrice, endPrice, avgPrice, shares, slippagePercent, priceImpact };
   };
@@ -366,72 +318,121 @@ export default function OutcomeBazaar() {
     return parseFloat(calculateShares()).toFixed(2);
   };
 
-  const calculateMaxFill = (market) => {
-    if (!market) return 0;
-    const poolAvailable = market.poolSeed * (1 - market.poolUsage);
-    const orderBookDepth = market.orderBookDepth || 0;
-    const maxFill = poolAvailable + orderBookDepth;
-    return maxFill;
-  };
-
   const processInstantFill = (instantAmount, poolNeeded, totalPaid) => {
     const mockTxHash = '0x' + Math.random().toString(16).substr(2, 64);
     setTxHash(mockTxHash);
     setTxStatus('success');
     setUsdtBalance(prev => prev - totalPaid);
 
-    const shares = instantAmount / (betType === 'yes' ? selectedMarket.yesPrice : selectedMarket.noPrice);
+    // Calculate fee and net amount
+    const fee = totalPaid * (FEE_PERCENTAGE / 100);
+    const amountAfterFee = totalPaid - fee;
 
-    // Update market pool usage and prices
+    // Update market pools using constant product AMM formula (matching smart contract)
     setMarkets(prevMarkets => prevMarkets.map(m => {
       if (m.id === selectedMarket.id) {
-        const newLiquidity = m.totalLiquidity + instantAmount;
-        const priceImpact = calculatePriceImpact(instantAmount, m.totalLiquidity);
+        // Constant product AMM: k = yesPool * noPool
+        const k = m.yesPool * m.noPool;
 
-        const newYesPrice = betType === 'yes'
-          ? Math.min(0.99, m.yesPrice + priceImpact)
-          : Math.max(0.01, m.yesPrice - priceImpact);
+        let newYesPool, newNoPool, shares;
 
-        const newNoPrice = betType === 'no'
-          ? Math.min(0.99, m.noPrice + priceImpact)
-          : Math.max(0.01, m.noPrice - priceImpact);
+        if (betType === 'yes') {
+          // Buying YES: add to NO pool, remove from YES pool
+          newNoPool = m.noPool + amountAfterFee;
+          newYesPool = k / newNoPool;
+          shares = m.yesPool - newYesPool;
+        } else {
+          // Buying NO: add to YES pool, remove from NO pool
+          newYesPool = m.yesPool + amountAfterFee;
+          newNoPool = k / newYesPool;
+          shares = m.noPool - newNoPool;
+        }
 
-        console.log(`PlaceBet (partial) price update - Market ${m.id}:`, {
+        // Calculate new prices from pools
+        const totalPool = newYesPool + newNoPool;
+        const newYesPrice = newNoPool / totalPool;
+        const newNoPrice = newYesPool / totalPool;
+        const newLiquidity = totalPool;
+
+        // VERIFICATION: Prices must sum to 1.0
+        const priceSum = newYesPrice + newNoPrice;
+        console.log('💯 Price verification (partial fill):', {
+          yesPrice: newYesPrice,
+          noPrice: newNoPrice,
+          sum: priceSum,
+          correct: Math.abs(priceSum - 1.0) < 0.0001
+        });
+
+        if (Math.abs(priceSum - 1.0) > 0.0001) {
+          console.error('❌ PRICES DO NOT SUM TO 1!', {
+            yesPrice: newYesPrice,
+            noPrice: newNoPrice,
+            sum: priceSum,
+            difference: priceSum - 1.0
+          });
+        }
+
+        console.log(`PlaceBet (partial) pool update - Market ${m.id}:`, {
           betType,
-          amount: totalPaid,
-          instantAmount,
-          totalLiquidity: m.totalLiquidity,
-          priceImpact,
+          amountPaid: totalPaid,
+          amountAfterFee,
+          fee,
+          shares,
+          oldYesPool: m.yesPool,
+          newYesPool,
+          oldNoPool: m.noPool,
+          newNoPool,
           oldYesPrice: m.yesPrice,
           newYesPrice,
           oldNoPrice: m.noPrice,
-          newNoPrice
+          newNoPrice,
+          k,
+          newK: newYesPool * newNoPool
         });
 
         return {
           ...m,
+          yesPool: newYesPool,
+          noPool: newNoPool,
           totalLiquidity: newLiquidity,
           participants: m.participants + 1,
           poolUsage: m.poolUsage + (poolNeeded / m.poolSeed),
           yesShares: betType === 'yes' ? m.yesShares + shares * 1000000 : m.yesShares,
           noShares: betType === 'no' ? m.noShares + shares * 1000000 : m.noShares,
           yesPrice: newYesPrice,
-          noPrice: newNoPrice
+          noPrice: newNoPrice,
+          poolSeed: newLiquidity
         };
       }
       return m;
     }));
+
+    // Calculate shares for position (same as market update)
+    const k = selectedMarket.yesPool * selectedMarket.noPool;
+    let positionShares, positionAvgPrice;
+
+    if (betType === 'yes') {
+      const newNoPool = selectedMarket.noPool + amountAfterFee;
+      const newYesPool = k / newNoPool;
+      positionShares = selectedMarket.yesPool - newYesPool;
+    } else {
+      const newYesPool = selectedMarket.yesPool + amountAfterFee;
+      const newNoPool = k / newYesPool;
+      positionShares = selectedMarket.noPool - newNoPool;
+    }
+
+    positionAvgPrice = amountAfterFee / positionShares;
 
     const newPosition = {
       id: Date.now(),
       marketId: selectedMarket.id,
       marketTitle: selectedMarket.title,
       outcome: betType,
-      shares: shares,
-      avgPrice: betType === 'yes' ? selectedMarket.yesPrice : selectedMarket.noPrice,
-      invested: instantAmount,
+      shares: positionShares,
+      avgPrice: positionAvgPrice,
+      invested: amountAfterFee,
       totalPaid: totalPaid,
-      buyFee: totalPaid - instantAmount,
+      buyFee: fee,
       netAmount: instantAmount,
       currentPrice: betType === 'yes' ? selectedMarket.yesPrice : selectedMarket.noPrice,
       timestamp: new Date().toISOString()
@@ -442,7 +443,7 @@ export default function OutcomeBazaar() {
       console.log('🎉 PARTIAL FILL SUCCESS - Showing success modal');
       console.log('Market:', selectedMarket.title);
       console.log('Outcome:', betType);
-      console.log('Shares filled:', shares);
+      console.log('Shares filled:', positionShares);
       console.log('Instant amount:', instantAmount);
       console.log('Total paid:', totalPaid);
 
@@ -450,7 +451,7 @@ export default function OutcomeBazaar() {
       const successData = {
         marketTitle: selectedMarket.title,
         outcome: betType,
-        shares: shares,
+        shares: positionShares,
         amountSpent: totalPaid,
         txHash: mockTxHash,
         isPartialFill: true,
@@ -496,18 +497,18 @@ export default function OutcomeBazaar() {
     const fee = amount * (FEE_PERCENTAGE / 100);
     const netAmount = amount - fee;
 
-    // Calculate maximum fillable amount
-    const poolAvailable = selectedMarket.poolSeed * (1 - selectedMarket.poolUsage);
-    const orderBookDepth = selectedMarket.orderBookDepth || 0;
-    const maxFill = poolAvailable + orderBookDepth;
+    // Calculate maximum fillable amount based on which outcome is being traded
+    // When buying YES, you're limited by the NO pool (and vice versa)
+    const relevantPool = betType === 'yes' ? selectedMarket.noPool : selectedMarket.yesPool;
+    const maxFill = relevantPool * 0.95; // 95% to prevent extreme price movements
 
     // Debug logging
     console.log('=== LIQUIDITY DEBUG ===');
-    console.log('Pool seed:', selectedMarket.poolSeed);
-    console.log('Pool usage:', selectedMarket.poolUsage);
-    console.log('Pool available:', poolAvailable);
-    console.log('Order book depth:', orderBookDepth);
-    console.log('Max instant fill:', maxFill);
+    console.log('Bet type:', betType);
+    console.log('YES pool:', selectedMarket.yesPool);
+    console.log('NO pool:', selectedMarket.noPool);
+    console.log('Relevant pool:', relevantPool);
+    console.log('Max instant fill (95%):', maxFill);
     console.log('Order amount:', amount);
     console.log('Net amount:', netAmount);
 
@@ -557,7 +558,7 @@ export default function OutcomeBazaar() {
     }
 
     // Check pool availability for normal orders
-    const poolNeeded = Math.min(netAmount * 0.4, poolAvailable);
+    const poolNeeded = Math.min(netAmount * 0.4, maxFill);
 
     // Only block trades at 95%+ pool usage
     if (selectedMarket.poolUsage >= 0.95) {
@@ -578,56 +579,86 @@ export default function OutcomeBazaar() {
       setTxStatus('success');
       setUsdtBalance(prev => prev - amount);
 
-      // Calculate slippage details
-      const startPrice = betType === 'yes' ? selectedMarket.yesPrice : selectedMarket.noPrice;
-      const priceImpact = calculatePriceImpact(netAmount, selectedMarket.totalLiquidity);
-      const endPrice = Math.min(0.99, Math.max(0.01, startPrice + priceImpact));
-      const avgPrice = (startPrice + endPrice) / 2;
-      const shares = netAmount / avgPrice;
-
-      // Update market pool usage and prices
+      // Update market pools using constant product AMM formula (matching smart contract)
       setMarkets(prevMarkets => prevMarkets.map(m => {
         if (m.id === selectedMarket.id) {
-          const newLiquidity = m.totalLiquidity + netAmount;
+          // Constant product AMM: k = yesPool * noPool
+          const k = m.yesPool * m.noPool;
 
-          const newYesPrice = betType === 'yes'
-            ? endPrice
-            : Math.max(0.01, m.yesPrice - priceImpact);
+          let newYesPool, newNoPool, shares;
 
-          const newNoPrice = betType === 'no'
-            ? endPrice
-            : Math.max(0.01, m.noPrice - priceImpact);
+          if (betType === 'yes') {
+            // Buying YES: add to NO pool, remove from YES pool
+            newNoPool = m.noPool + netAmount;
+            newYesPool = k / newNoPool;
+            shares = m.yesPool - newYesPool;
+          } else {
+            // Buying NO: add to YES pool, remove from NO pool
+            newYesPool = m.yesPool + netAmount;
+            newNoPool = k / newYesPool;
+            shares = m.noPool - newNoPool;
+          }
 
-          console.log(`PlaceBet price update - Market ${m.id}:`, {
+          // Calculate new prices from pools
+          const totalPool = newYesPool + newNoPool;
+          const newYesPrice = newNoPool / totalPool;
+          const newNoPrice = newYesPool / totalPool;
+          const newLiquidity = totalPool;
+
+          // VERIFICATION: Prices must sum to 1.0
+          const priceSum = newYesPrice + newNoPrice;
+          console.log('💯 Price verification (full trade):', {
+            yesPrice: newYesPrice,
+            noPrice: newNoPrice,
+            sum: priceSum,
+            correct: Math.abs(priceSum - 1.0) < 0.0001
+          });
+
+          if (Math.abs(priceSum - 1.0) > 0.0001) {
+            console.error('❌ PRICES DO NOT SUM TO 1!', {
+              yesPrice: newYesPrice,
+              noPrice: newNoPrice,
+              sum: priceSum,
+              difference: priceSum - 1.0
+            });
+          }
+
+          console.log(`PlaceBet pool update - Market ${m.id}:`, {
             betType,
-            amount,
+            amountPaid: amount,
             netAmount,
-            totalLiquidity: m.totalLiquidity,
-            startPrice,
-            endPrice,
-            avgPrice,
             shares,
-            priceImpact,
+            oldYesPool: m.yesPool,
+            newYesPool,
+            oldNoPool: m.noPool,
+            newNoPool,
             oldYesPrice: m.yesPrice,
             newYesPrice,
             oldNoPrice: m.noPrice,
-            newNoPrice
+            newNoPrice,
+            k,
+            newK: newYesPool * newNoPool
           });
 
           const updatedMarket = {
             ...m,
+            yesPool: newYesPool,
+            noPool: newNoPool,
             totalLiquidity: newLiquidity,
             participants: m.participants + 1,
             poolUsage: m.poolUsage + (poolNeeded / m.poolSeed),
             yesShares: betType === 'yes' ? m.yesShares + shares * 1000000 : m.yesShares,
             noShares: betType === 'no' ? m.noShares + shares * 1000000 : m.noShares,
             yesPrice: newYesPrice,
-            noPrice: newNoPrice
+            noPrice: newNoPrice,
+            poolSeed: newLiquidity
           };
 
           console.log('Market after trade:', {
             id: updatedMarket.id,
             participants: updatedMarket.participants,
+            yesPool: updatedMarket.yesPool,
+            noPool: updatedMarket.noPool,
             totalLiquidity: updatedMarket.totalLiquidity
           });
 
@@ -636,6 +667,23 @@ export default function OutcomeBazaar() {
         return m;
       }));
 
+      // Calculate shares using constant product formula (same as market update)
+      const k = selectedMarket.yesPool * selectedMarket.noPool;
+      let shares, avgPrice;
+
+      if (betType === 'yes') {
+        const newNoPool = selectedMarket.noPool + netAmount;
+        const newYesPool = k / newNoPool;
+        shares = selectedMarket.yesPool - newYesPool;
+      } else {
+        const newYesPool = selectedMarket.yesPool + netAmount;
+        const newNoPool = k / newYesPool;
+        shares = selectedMarket.noPool - newNoPool;
+      }
+
+      avgPrice = netAmount / shares;
+
+      // Create and add position
       const newPosition = {
         id: Date.now(),
         marketId: selectedMarket.id,
@@ -650,7 +698,15 @@ export default function OutcomeBazaar() {
         currentPrice: betType === 'yes' ? selectedMarket.yesPrice : selectedMarket.noPrice,
         timestamp: new Date().toISOString()
       };
+
       setUserPositions(prev => [...prev, newPosition]);
+
+      // Track trade in analytics
+      analytics.trackTrade({
+        outcome: betType.toUpperCase(),
+        amount: amount,
+        category: selectedMarket.category
+      });
 
       // Log activity
       setActivityHistory(prev => [{
@@ -757,22 +813,30 @@ export default function OutcomeBazaar() {
     // Update balance
     setUsdtBalance(prev => prev + netProceeds);
 
-    // Update position (reduce shares)
-    setUserPositions(prev => prev.map(p => {
-      if (p.id === positionId) {
-        const remainingShares = p.shares - sharesToClose;
-        const proportionClosed = sharesToClose / p.shares;
-        const investmentClosed = p.invested * proportionClosed;
+    // Update position (reduce shares or remove if closing all)
+    setUserPositions(prev => {
+      return prev.map(p => {
+        if (p.id === positionId) {
+          const remainingShares = p.shares - sharesToClose;
 
-        return {
-          ...p,
-          shares: remainingShares,
-          invested: p.invested - investmentClosed,
-          totalPaid: p.totalPaid - (p.totalPaid * proportionClosed)
-        };
-      }
-      return p;
-    }));
+          // If remaining shares are less than 0.01, treat as full close
+          if (remainingShares < 0.01) {
+            return null; // Will be filtered out below
+          }
+
+          const proportionClosed = sharesToClose / p.shares;
+          const investmentClosed = p.invested * proportionClosed;
+
+          return {
+            ...p,
+            shares: remainingShares,
+            invested: p.invested - investmentClosed,
+            totalPaid: p.totalPaid - (p.totalPaid * proportionClosed)
+          };
+        }
+        return p;
+      }).filter(p => p !== null); // Remove null entries (fully closed positions)
+    });
 
     // Update market
     setMarkets(prev => prev.map(m => {
@@ -821,7 +885,29 @@ export default function OutcomeBazaar() {
 
     setShowPartialCloseModal(false);
     setPartialCloseAmount('');
-    alert(`Closed ${sharesToClose.toFixed(2)} shares for ${formatUSDT(netProceeds)}`);
+
+    // Determine if it was a full or partial close
+    const remainingShares = position.shares - sharesToClose;
+    const isFull = remainingShares < 0.01;
+
+    // Track position close in analytics
+    analytics.trackPositionClose({
+      outcome: position.outcome.toUpperCase(),
+      partial: !isFull,
+      pnl: partialPnL
+    });
+
+    if (isFull) {
+      alert(`Position closed! Received ${formatUSDT(netProceeds)}`);
+    } else {
+      alert(`Closed ${sharesToClose.toFixed(2)} shares for ${formatUSDT(netProceeds)}. ${remainingShares.toFixed(2)} shares remaining.`);
+    }
+  };
+
+  const openPartialCloseModal = (data) => {
+    setSelectedClosePosition(data);
+    setShowPartialCloseModal(true);
+    setPartialCloseAmount('');
   };
 
   const closePosition = (positionId) => {
@@ -856,8 +942,10 @@ export default function OutcomeBazaar() {
     const totalPaid = position.totalPaid || position.invested;
     const realPnL = netProceeds - totalPaid;
 
-    // Check liquidity
-    const availableLiquidity = (market.poolSeed * (1 - market.poolUsage)) + market.orderBookDepth;
+    // Check liquidity - when selling, you're limited by the same side's pool
+    // (opposite of buying where you're limited by the opposite pool)
+    const relevantPool = position.outcome === 'yes' ? market.yesPool : market.noPool;
+    const availableLiquidity = relevantPool * 0.95;
     if (actualValue > availableLiquidity) {
       // Calculate max closeable amount
       const maxCloseableShares = (availableLiquidity / avgPrice) * 0.98; // Account for fees
@@ -983,6 +1071,45 @@ export default function OutcomeBazaar() {
     alert('Market suggestion submitted! We\'ll review it soon.');
   };
 
+  const handleAcceptTerms = () => {
+    localStorage.setItem('outcomebazaar_terms_accepted', 'true');
+    setShowTermsAcceptance(false);
+  };
+
+  const handleOpenTerms = () => {
+    setShowTermsModal(true);
+  };
+
+  const handleOpenPrivacy = () => {
+    setShowPrivacyModal(true);
+  };
+
+
+  // Load markets when contracts are ready
+  useEffect(() => {
+    loadMarkets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contracts.factory, provider]);
+
+  // Check if user has accepted terms - DISABLED
+  // useEffect(() => {
+  //   const hasAcceptedTerms = localStorage.getItem('outcomebazaar_terms_accepted');
+  //   if (!hasAcceptedTerms) {
+  //     setShowTermsAcceptance(true);
+  //   }
+  // }, []);
+
+  // Initialize analytics
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  // Track wallet connections/disconnections
+  useEffect(() => {
+    if (walletConnected && walletAddress) {
+      analytics.trackWalletConnect(walletAddress);
+    }
+  }, [walletConnected, walletAddress, analytics]);
 
   // Auto-hide header on scroll down, show on scroll up
   useEffect(() => {
@@ -1016,6 +1143,7 @@ export default function OutcomeBazaar() {
         walletConnected={walletConnected}
         walletAddress={walletAddress}
         usdtBalance={usdtBalance}
+        refreshBalance={refreshBalance}
         networkError={networkError}
         isPolygon={isPolygon}
         currentView={currentView}
@@ -1038,43 +1166,81 @@ export default function OutcomeBazaar() {
             {/* How It Works Section - Show only to non-connected users */}
             {!walletConnected && <HowItWorks />}
 
-            {/* Stats Section */}
-            <div id="markets" className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-6 border border-purple-500 border-opacity-30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-purple-300 mb-1">Active Markets</p>
-                    <p className="text-2xl font-bold text-white">{markets.length}</p>
-                    <p className="text-xs text-purple-400 mt-1">Live on Polygon</p>
-                  </div>
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="text-white" size={24} />
-                  </div>
-                </div>
+            {/* Loading State */}
+            {marketsLoading && (
+              <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-12 border border-purple-500 border-opacity-30 text-center mb-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                <p className="text-purple-300 text-lg">Loading markets from blockchain...</p>
+                <p className="text-purple-400 text-sm mt-2">This may take a few seconds</p>
               </div>
-              <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-6 border border-purple-500 border-opacity-30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-purple-300 mb-1">New This Week</p>
-                    <p className="text-2xl font-bold text-white">3 markets</p>
-                    <p className="text-xs text-purple-400 mt-1">Fresh predictions daily</p>
-                  </div>
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-2xl">🎯</div>
+            )}
+
+            {/* Error State */}
+            {marketsError && (
+              <div className="bg-red-500 bg-opacity-20 border border-red-500 border-opacity-30 rounded-xl p-6 mb-8">
+                <div className="flex items-center gap-3 mb-2">
+                  <AlertCircle className="text-red-400" size={24} />
+                  <h3 className="text-lg font-semibold text-red-300">Error Loading Markets</h3>
                 </div>
+                <p className="text-red-200 text-sm mb-4">{marketsError}</p>
+                <button
+                  onClick={loadMarkets}
+                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all"
+                >
+                  Try Again
+                </button>
               </div>
-              <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-6 border border-purple-500 border-opacity-30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-purple-300 mb-1">24h Volume</p>
-                    <p className="text-2xl font-bold text-white">
-                      {formatUSDT(markets.reduce((sum, m) => sum + (m.volume24h || 0), 0))}
-                    </p>
-                    <p className="text-xs text-green-400 mt-1 font-semibold">+23% from yesterday</p>
-                  </div>
-                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="text-white" size={24} />
-                  </div>
+            )}
+
+            {/* Empty state when no markets */}
+            {!marketsLoading && !marketsError && markets.length === 0 && walletConnected && (
+              <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-12 border border-purple-500 border-opacity-30 text-center mb-8">
+                <div className="text-6xl mb-4">📊</div>
+                <h3 className="text-xl font-semibold text-white mb-2">No Markets Found</h3>
+                <p className="text-purple-300 mb-4">There are currently no active markets on the blockchain.</p>
+              </div>
+            )}
+
+            {/* Message for non-connected users */}
+            {!walletConnected && markets.length === 0 && (
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 bg-opacity-20 border border-purple-500 border-opacity-50 rounded-xl p-8 mb-8 text-center">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <Wallet className="text-purple-300" size={32} />
+                  <h3 className="text-2xl font-bold text-white">Connect Your Wallet to Get Started</h3>
                 </div>
+                <p className="text-purple-200 text-lg mb-6">
+                  Connect your wallet to view live prediction markets from the Polygon blockchain
+                </p>
+                <button
+                  onClick={connectWallet}
+                  className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-bold text-lg transition-all shadow-lg hover:shadow-purple-500/50"
+                >
+                  Connect Wallet to View Markets
+                </button>
+              </div>
+            )}
+
+            {/* Value Propositions Section */}
+            <div id="markets" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Instant Settlement */}
+              <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-6 border border-purple-500 border-opacity-30 text-center hover:border-opacity-60 transition-all">
+                <div className="text-5xl mb-3">⚡</div>
+                <div className="text-xl font-bold text-white mb-2">Instant Settlement</div>
+                <div className="text-sm text-purple-300">Trade settles in seconds on blockchain</div>
+              </div>
+
+              {/* Live 24/7 */}
+              <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-6 border border-purple-500 border-opacity-30 text-center hover:border-opacity-60 transition-all">
+                <div className="text-5xl mb-3">📊</div>
+                <div className="text-xl font-bold text-white mb-2">Live 24/7</div>
+                <div className="text-sm text-purple-300">Markets always open, trade anytime</div>
+              </div>
+
+              {/* Low Fees */}
+              <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-6 border border-purple-500 border-opacity-30 text-center hover:border-opacity-60 transition-all">
+                <div className="text-5xl mb-3">💰</div>
+                <div className="text-xl font-bold text-white mb-2">Low Fees</div>
+                <div className="text-sm text-purple-300">Only 1.5% trading fee on Polygon</div>
               </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1104,6 +1270,7 @@ export default function OutcomeBazaar() {
             closePosition={closePosition}
             setCurrentView={setCurrentView}
             setLimitOrders={setLimitOrders}
+            openPartialCloseModal={openPartialCloseModal}
           />
         )}
         {currentView === 'activity' && (
@@ -1190,15 +1357,35 @@ export default function OutcomeBazaar() {
                         </div>
                       </div>
                     </div>
-                    <div className="mb-4 h-20">
+                    <div className="mb-4 h-24">
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={market.priceHistory}>
+                        <AreaChart data={market.priceHistory} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                           <defs>
                             <linearGradient id={`gradient-${market.id}`} x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
                               <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                             </linearGradient>
                           </defs>
+                          <XAxis
+                            dataKey="time"
+                            stroke="#a78bfa"
+                            style={{ fontSize: '10px' }}
+                            tick={{ fill: '#a78bfa' }}
+                          />
+                          <YAxis
+                            hide={true}
+                            domain={[0, 1]}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                              border: '1px solid rgba(168, 85, 247, 0.3)',
+                              borderRadius: '8px',
+                              fontSize: '12px'
+                            }}
+                            labelStyle={{ color: '#a78bfa' }}
+                            formatter={(value) => `$${Number(value).toFixed(2)}`}
+                          />
                           <Area type="monotone" dataKey="price" stroke="#10b981" fill={`url(#gradient-${market.id})`} strokeWidth={2} />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -1386,26 +1573,33 @@ export default function OutcomeBazaar() {
       {showPartialCloseModal && selectedClosePosition && (
         <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-xl max-w-md w-full p-6 shadow-2xl border border-purple-500 border-opacity-30">
-            <h2 className="text-xl font-bold text-white mb-4">Partial Close - Insufficient Liquidity</h2>
+            <h2 className="text-xl font-bold text-white mb-4">Close Position</h2>
+            <p className="text-purple-300 text-sm mb-4">{selectedClosePosition.position.marketTitle}</p>
 
-            <div className="bg-red-500 bg-opacity-20 border border-red-500 border-opacity-30 rounded-lg p-3 mb-4">
-              <p className="text-sm text-red-300">
-                Not enough liquidity to close full position
-              </p>
-            </div>
-
-            <div className="space-y-3 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-purple-300">Your shares:</span>
-                <span className="text-white font-semibold">{selectedClosePosition.position.shares.toFixed(2)}</span>
+            <div className="bg-black bg-opacity-30 rounded-lg p-4 mb-4 border border-purple-500 border-opacity-20">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-purple-300 text-sm">Position:</span>
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  selectedClosePosition.position.outcome === 'yes'
+                    ? 'bg-green-500 bg-opacity-20 text-green-300'
+                    : 'bg-red-500 bg-opacity-20 text-red-300'
+                }`}>
+                  {selectedClosePosition.position.outcome.toUpperCase()}
+                </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-purple-300">Max closeable:</span>
-                <span className="text-white font-semibold">{selectedClosePosition.maxShares.toFixed(2)} shares</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-purple-300">Available liquidity:</span>
-                <span className="text-white font-semibold">{formatUSDT(selectedClosePosition.availableLiquidity)}</span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-purple-300">Total shares:</span>
+                  <span className="text-white font-semibold">{selectedClosePosition.position.shares.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-purple-300">Amount invested:</span>
+                  <span className="text-white font-semibold">{formatUSDT(selectedClosePosition.position.totalPaid)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-purple-300">Current value:</span>
+                  <span className="text-white font-semibold">{formatUSDT(selectedClosePosition.availableLiquidity)}</span>
+                </div>
               </div>
             </div>
 
@@ -1424,9 +1618,8 @@ export default function OutcomeBazaar() {
                 />
                 <button
                   onClick={() => {
-                    // Set to max closeable shares (rounded down to avoid errors)
-                    const maxShares = Math.floor(selectedClosePosition.maxShares * 100) / 100;
-                    setPartialCloseAmount(maxShares.toString());
+                    // Set to exact position shares to close everything
+                    setPartialCloseAmount(selectedClosePosition.position.shares.toString());
                   }}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-semibold rounded transition-all"
                 >
@@ -1434,7 +1627,7 @@ export default function OutcomeBazaar() {
                 </button>
               </div>
               <p className="text-xs text-purple-400 mt-1">
-                Max: {selectedClosePosition.maxShares.toFixed(2)} shares
+                You can close all or part of your position (max: {selectedClosePosition.maxShares.toFixed(2)} shares)
               </p>
             </div>
 
@@ -1442,7 +1635,8 @@ export default function OutcomeBazaar() {
               const amount = parseFloat(partialCloseAmount);
               const totalShares = selectedClosePosition.position.shares;
               const percentage = ((amount / totalShares) * 100).toFixed(1);
-              const isFull = amount === totalShares;
+              // Consider it a full close if within 0.01 shares (handles floating point precision)
+              const isFull = Math.abs(amount - totalShares) < 0.01;
 
               // Calculate estimated proceeds (same logic as executePartialClose)
               const market = markets.find(m => m.id === selectedClosePosition.position.marketId);
@@ -1498,14 +1692,14 @@ export default function OutcomeBazaar() {
                 onClick={() => executePartialClose(selectedClosePosition.position.id, parseFloat(partialCloseAmount))}
                 disabled={!partialCloseAmount || parseFloat(partialCloseAmount) > selectedClosePosition.maxShares || parseFloat(partialCloseAmount) <= 0}
                 className={`flex-1 px-4 py-3 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                  partialCloseAmount && parseFloat(partialCloseAmount) === selectedClosePosition.position.shares
+                  partialCloseAmount && Math.abs(parseFloat(partialCloseAmount) - selectedClosePosition.position.shares) < 0.01
                     ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
                     : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
                 }`}
               >
                 {!partialCloseAmount || parseFloat(partialCloseAmount) <= 0
                   ? 'Close Position'
-                  : parseFloat(partialCloseAmount) === selectedClosePosition.position.shares
+                  : Math.abs(parseFloat(partialCloseAmount) - selectedClosePosition.position.shares) < 0.01
                   ? 'Close Full Position'
                   : 'Close Partial Position'}
               </button>
@@ -1746,6 +1940,39 @@ export default function OutcomeBazaar() {
           onClose={() => setNetworkError('')}
         />
       )}
+
+      {/* Terms Acceptance Modal */}
+      {showTermsAcceptance && (
+        <TermsAcceptanceModal
+          onAccept={handleAcceptTerms}
+          onViewTerms={handleOpenTerms}
+          onViewPrivacy={handleOpenPrivacy}
+        />
+      )}
+
+      {/* Terms of Service Modal */}
+      {showTermsModal && (
+        <LegalDocModal
+          title="Terms of Service"
+          content={<TermsContent />}
+          onClose={() => setShowTermsModal(false)}
+        />
+      )}
+
+      {/* Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <LegalDocModal
+          title="Privacy Policy"
+          content={<PrivacyContent />}
+          onClose={() => setShowPrivacyModal(false)}
+        />
+      )}
+
+      {/* Footer */}
+      <Footer
+        onOpenTerms={handleOpenTerms}
+        onOpenPrivacy={handleOpenPrivacy}
+      />
     </div>
   );
 }
