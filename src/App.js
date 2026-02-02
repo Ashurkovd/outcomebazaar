@@ -62,7 +62,7 @@ export default function OutcomeBazaar() {
   const [closePositionData, setClosePositionData] = useState(null);
   const [realizedPnL, setRealizedPnL] = useState(0);
   const [activityHistory, setActivityHistory] = useState([]);
-  // const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showWalletPrompt, setShowWalletPrompt] = useState(false);
   const [showTradeSuccessModal, setShowTradeSuccessModal] = useState(false);
