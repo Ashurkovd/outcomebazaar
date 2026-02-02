@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Users, Wallet, Search, ExternalLink, AlertCircle, CheckCircle, PieChart, Clock, Plus, BarChart3, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ExternalLink, AlertCircle, CheckCircle, Clock, Activity } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useWallet } from './hooks/useWallet';
 import { Header } from './components/Header';
@@ -32,7 +32,7 @@ export default function OutcomeBazaar() {
     isMobile,
     getBrowserType,
     provider,
-    signer,
+    // signer,
     contracts,
     getMarketContract,
   } = useWallet();
@@ -62,7 +62,7 @@ export default function OutcomeBazaar() {
   const [closePositionData, setClosePositionData] = useState(null);
   const [realizedPnL, setRealizedPnL] = useState(0);
   const [activityHistory, setActivityHistory] = useState([]);
-  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  // const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showWalletPrompt, setShowWalletPrompt] = useState(false);
   const [showTradeSuccessModal, setShowTradeSuccessModal] = useState(false);
@@ -75,7 +75,7 @@ export default function OutcomeBazaar() {
 
   const categories = ['All', 'Cricket', 'Politics', 'Economy', 'Space', 'Entertainment'];
   const FEE_PERCENTAGE = 1.5; // Matches smart contract: 150 basis points / 10000 = 1.5%
-  const MAX_POOL_USAGE = 0.7;
+  // const MAX_POOL_USAGE = 0.7;
 
   // TODO: Before production, change BASE_IMPACT from 1.5 to 1.0
   const calculatePriceImpact = (tradeSize, marketLiquidity) => {
@@ -313,10 +313,10 @@ export default function OutcomeBazaar() {
     return details ? details.shares.toFixed(4) : 0;
   };
 
-  const calculatePayout = () => {
-    if (!betAmount || !selectedMarket) return 0;
-    return parseFloat(calculateShares()).toFixed(2);
-  };
+  // const calculatePayout = () => {
+  //   if (!betAmount || !selectedMarket) return 0;
+  //   return parseFloat(calculateShares()).toFixed(2);
+  // };
 
   const processInstantFill = (instantAmount, poolNeeded, totalPaid) => {
     const mockTxHash = '0x' + Math.random().toString(16).substr(2, 64);
@@ -957,7 +957,7 @@ export default function OutcomeBazaar() {
     if (actualValue > availableLiquidity) {
       // Calculate max closeable amount
       const maxCloseableShares = (availableLiquidity / avgPrice) * 0.98; // Account for fees
-      const maxCloseableValue = maxCloseableShares * avgPrice;
+      // const maxCloseableValue = maxCloseableShares * avgPrice;
 
       // Open a modal for partial close
       setSelectedClosePosition({

@@ -275,7 +275,7 @@ export const setUserProperties = (properties) => {
   }
 };
 
-export default {
+const analytics = {
   initAnalytics,
   trackPageView,
   trackEvent,
@@ -289,3 +289,5 @@ export default {
   trackError,
   trackNetworkSwitch,
 };
+
+export default analytics;

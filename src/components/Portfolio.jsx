@@ -12,6 +12,7 @@ export const Portfolio = ({
   closePosition,
   setCurrentView,
   setLimitOrders,
+  openPartialCloseModal,
 }) => {
   return (
     <div className="space-y-6">
@@ -115,12 +116,24 @@ export const Portfolio = ({
                   </div>
                   <div className="flex justify-end pt-4 border-t border-purple-500 border-opacity-30 mt-4">
                     <button
-                      onClick={() => closePosition(aggPos.positions[0].id)}
-                      className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-red-500/50 flex items-center gap-2"
+                      onClick={() => openPartialCloseModal({
+                        position: {
+                          id: aggPos.positions[0].id,
+                          marketId: aggPos.marketId,
+                          marketTitle: aggPos.marketTitle,
+                          outcome: aggPos.outcome,
+                          shares: aggPos.totalShares,
+                          invested: aggPos.totalInvested,
+                          totalPaid: aggPos.totalPaid
+                        },
+                        maxShares: aggPos.totalShares,
+                        availableLiquidity: currentValue
+                      })}
+                      className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-pink-500/50 flex items-center gap-2"
                     >
-                      <span>Close All for {formatUSDT(currentValue)}</span>
-                      <span className={`text-sm ${pnl >= 0 ? 'text-green-200' : 'text-red-200'}`}>
-                        ({pnl >= 0 ? '+' : ''}{formatUSDT(pnl)})
+                      <span>Close Position</span>
+                      <span className="text-sm text-purple-200">
+                        ({aggPos.totalShares.toFixed(2)} shares)
                       </span>
                     </button>
                   </div>
@@ -136,7 +149,7 @@ export const Portfolio = ({
           <h2 className="text-2xl font-bold text-white mb-4">Pending Limit Orders</h2>
           <div className="space-y-4">
             {limitOrders.map(order => {
-              const market = markets.find(m => m.id === order.marketId);
+              // const market = markets.find(m => m.id === order.marketId);
               return (
                 <div key={order.id} className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-6 border border-yellow-500 border-opacity-30">
                   <div className="flex items-start justify-between">
