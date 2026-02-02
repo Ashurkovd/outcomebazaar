@@ -62,6 +62,7 @@ export default function OutcomeBazaar() {
   const [closePositionData, setClosePositionData] = useState(null);
   const [realizedPnL, setRealizedPnL] = useState(0);
   const [activityHistory, setActivityHistory] = useState([]);
+  // eslint-disable-next-line no-unused-vars
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showWalletPrompt, setShowWalletPrompt] = useState(false);
@@ -308,10 +309,10 @@ export default function OutcomeBazaar() {
     return { startPrice, endPrice, avgPrice, shares, slippagePercent, priceImpact };
   };
 
-  const calculateShares = () => {
-    const details = calculateSlippageDetails();
-    return details ? details.shares.toFixed(4) : 0;
-  };
+  // const calculateShares = () => {
+  //   const details = calculateSlippageDetails();
+  //   return details ? details.shares.toFixed(4) : 0;
+  // };
 
   // const calculatePayout = () => {
   //   if (!betAmount || !selectedMarket) return 0;
