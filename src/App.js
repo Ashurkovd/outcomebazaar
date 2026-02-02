@@ -1095,9 +1095,11 @@ export default function OutcomeBazaar() {
 
   // Load markets when contracts are ready
   useEffect(() => {
-    loadMarkets();
+    if (contracts?.factory && provider) {
+      loadMarkets();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contracts.factory, provider]);
+  }, [contracts?.factory, provider]);
 
   // Check if user has accepted terms - DISABLED
   // useEffect(() => {
