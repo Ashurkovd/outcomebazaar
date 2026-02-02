@@ -32,7 +32,6 @@ export default function OutcomeBazaar() {
     isMobile,
     getBrowserType,
     provider,
-    // signer,
     contracts,
     getMarketContract,
   } = useWallet();
