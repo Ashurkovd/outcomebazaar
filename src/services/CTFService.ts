@@ -21,22 +21,123 @@ export class CTFService {
   private signer: ethers.Wallet;
   private ctfAddress: string;
   private usdtAddress: string;
+  private connectionTested = false;
 
   constructor(
     providerUrl: string,
     privateKey: string,
     network: 'polygon' | 'amoy' = 'polygon'
   ) {
-    this.provider = new ethers.JsonRpcProvider(providerUrl);
-    this.signer = new ethers.Wallet(privateKey, this.provider);
-    this.ctfAddress = ADDRESSES[network].CTF;
-    this.usdtAddress = ADDRESSES[network].USDT;
+    console.log('🔧 Initializing CTFService...');
+    console.log(`📡 Primary RPC: ${providerUrl}`);
 
-    this.contract = new ethers.Contract(
-      this.ctfAddress,
-      CTF_ABI,
-      this.signer
-    );
+    // Fallback RPC URLs (in order of preference based on tests)
+    const fallbackUrls = [
+      'https://polygon.drpc.org',
+      'https://1rpc.io/matic'
+    ];
+
+    try {
+      // Create provider with static network (no auto-detection)
+      this.provider = new ethers.JsonRpcProvider(providerUrl, 137, {
+        staticNetwork: true,  // Don't auto-detect network
+        batchMaxCount: 1,
+        polling: false
+      });
+
+      this.signer = new ethers.Wallet(privateKey, this.provider);
+      this.ctfAddress = ADDRESSES[network].CTF;
+      this.usdtAddress = ADDRESSES[network].USDT;
+
+      this.contract = new ethers.Contract(
+        this.ctfAddress,
+        CTF_ABI,
+        this.signer
+      );
+
+      console.log('✅ CTFService initialized (lazy connection)');
+
+      // Test connection in background (don't block startup)
+      this.testConnectionWithFallback(providerUrl, fallbackUrls, privateKey, network);
+
+    } catch (error) {
+      console.error('❌ CTFService initialization error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Test blockchain connection in background.
+   * If primary RPC fails, automatically switch to fallback.
+   */
+  private async testConnectionWithFallback(
+    primaryUrl: string,
+    fallbackUrls: string[],
+    privateKey: string,
+    network: 'polygon' | 'amoy'
+  ): Promise<void> {
+    try {
+      console.log('🔍 Testing blockchain connection...');
+
+      // Test primary RPC with timeout
+      const networkTest = await Promise.race([
+        this.provider.getNetwork(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout after 10s')), 10000)
+        )
+      ]);
+
+      console.log(`✅ Connected to chain ID: ${networkTest.chainId}`);
+      this.connectionTested = true;
+
+    } catch (primaryError) {
+      console.error(`⚠️  Primary RPC failed: ${(primaryError as Error).message}`);
+      console.log('🔄 Trying fallback RPCs...');
+
+      // Try fallback RPCs
+      for (const fallbackUrl of fallbackUrls) {
+        try {
+          console.log(`   Testing: ${fallbackUrl}`);
+
+          const testProvider = new ethers.JsonRpcProvider(fallbackUrl, 137, {
+            staticNetwork: true
+          });
+
+          // Quick test
+          await Promise.race([
+            testProvider.getBlockNumber(),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('Timeout')), 5000)
+            )
+          ]);
+
+          // Fallback works! Switch to it
+          console.log(`   ✅ Fallback working: ${fallbackUrl}`);
+          console.log(`🔄 Switching to fallback RPC...`);
+
+          this.provider = testProvider;
+          this.signer = new ethers.Wallet(privateKey, this.provider);
+          this.contract = new ethers.Contract(
+            this.ctfAddress,
+            CTF_ABI,
+            this.signer
+          );
+
+          console.log('✅ Successfully switched to fallback RPC');
+          this.connectionTested = true;
+          return;
+
+        } catch (fallbackError) {
+          console.log(`   ❌ Failed: ${(fallbackError as Error).message}`);
+          continue;
+        }
+      }
+
+      // All RPCs failed
+      console.error('❌ All RPC endpoints failed (primary + fallbacks)');
+      console.error('   Blockchain features will not work until RPC is available');
+      console.error('   App will continue but market creation will fail');
+    }
   }
 
   /**
