@@ -1,5 +1,5 @@
 import { Order, Trade, OrderSide } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 /**
  * Single-market order book with price-time priority matching.
@@ -156,7 +156,7 @@ export class OrderBook {
 
   private createTrade(buyOrder: Order, sellOrder: Order, price: number, size: number): Trade {
     return {
-      id: uuidv4(),
+      id: randomUUID(),
       marketId: this.marketId,
       buyOrderId: buyOrder.id,
       sellOrderId: sellOrder.id,

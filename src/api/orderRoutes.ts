@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { DatabaseService } from '../database/DatabaseService';
 import { OrderBookManager } from '../matching/OrderBookManager';
 import { Order, PlaceOrderRequest } from '../types';
@@ -74,7 +74,7 @@ export function createOrderRoutes(
 
       // ── Build order ───────────────────────────────────────────────
       const order: Order = {
-        id: uuidv4(),
+        id: randomUUID(),
         maker: maker.toLowerCase(),
         market: marketId,
         conditionId: marketId,
