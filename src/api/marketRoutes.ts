@@ -109,6 +109,7 @@ export function createMarketRoutes(
       // Save to database
       const market = await db.createMarket({
         id: conditionId,
+        questionId: questionId,
         question,
         description,
         category: category.toLowerCase(),
@@ -118,8 +119,6 @@ export function createMarketRoutes(
         status: 'ACTIVE',
         yesToken: yesPositionId.toString(),
         noToken: noPositionId.toString(),
-        // Extra fields stored in DB
-        ...(({ questionId }) => ({ questionId }))(req.body),
       } as any);
 
       console.log(`✅ Market created: ${conditionId}`);
