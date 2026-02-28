@@ -25,7 +25,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
     setSuccess(false);
 
     try {
-      const response = await orderBookAPI.placeOrder({
+      await orderBookAPI.placeOrder({
         marketId,
         maker: userAddress,
         side,
@@ -45,7 +45,6 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
   }
 
   const outcomeLabel = outcome === 0 ? 'YES' : 'NO';
-  const sideColor = side === 'BUY' ? 'green' : 'red';
 
   return (
     <div className="bg-gray-800 rounded-lg p-6">

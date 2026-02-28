@@ -54,8 +54,20 @@ export const TradeModal = ({
               <input type="number" value={betAmount} onChange={(e) => setBetAmount(e.target.value)} placeholder="Enter amount" className="w-full px-4 py-3 pr-20 bg-black bg-opacity-30 border border-purple-500 border-opacity-30 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-white placeholder-purple-500" min="1" max={usdtBalance} step="0.01" />
               <button
                 onClick={() => {
-                  const maxAmount = Math.floor(usdtBalance * 100) / 100;
-                  setBetAmount(maxAmount.toString());
+                  // Calculate max based on wallet balance
+                  const walletMax = Math.floor(usdtBalance * 100) / 100;
+
+                  // Calculate max based on market liquidity
+                  const relevantPool = betType === 'yes' ? selectedMarket.noPool : selectedMarket.yesPool;
+                  const maxLiquidityNet = relevantPool * 0.95; // 95% of pool
+                  // Convert from net amount (after fee) to gross amount (before fee)
+                  const liquidityMax = maxLiquidityNet / (1 - FEE_PERCENTAGE / 100);
+
+                  // Take the minimum of wallet balance and liquidity-based max
+                  const maxAmount = Math.min(walletMax, liquidityMax);
+                  const roundedMax = Math.floor(maxAmount * 100) / 100;
+
+                  setBetAmount(roundedMax.toString());
                 }}
                 className="absolute right-12 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs font-semibold rounded transition-all"
               >
@@ -66,16 +78,17 @@ export const TradeModal = ({
             <p className="text-sm text-purple-400 mt-2">Available: {formatUSDT(usdtBalance)}</p>
           </div>
 
-          {/* Low Liquidity Warning */}
+          {/* Trade Amount Validation */}
           {betAmount && (() => {
             const amount = parseFloat(betAmount);
             const fee = amount * (FEE_PERCENTAGE / 100);
             const netAmount = amount - fee;
 
-            // Calculate available liquidity (95% of pool + order book)
-            const poolAvailable = selectedMarket.poolSeed * (1 - selectedMarket.poolUsage);
-            const orderBookDepth = selectedMarket.orderBookDepth || 0;
-            const maxLiquidity = (poolAvailable + orderBookDepth) * 0.95;
+            // Calculate available liquidity based on which outcome is being traded
+            // When buying YES, you're limited by the NO pool (and vice versa)
+            const relevantPool = betType === 'yes' ? selectedMarket.noPool : selectedMarket.yesPool;
+            // Use 95% of the relevant pool as the maximum to prevent extreme price movements
+            const maxLiquidity = relevantPool * 0.95;
 
             const isLiquidityInsufficient = netAmount > maxLiquidity;
 
@@ -86,11 +99,8 @@ export const TradeModal = ({
                     <AlertCircle className="text-orange-400" size={20} />
                     <span className="text-orange-300 text-sm font-semibold">⚠️ Amount Too Large</span>
                   </div>
-                  <p className="text-orange-200 text-xs mb-2">
-                    Please reduce your trade amount. This amount exceeds available market liquidity.
-                  </p>
-                  <p className="text-orange-300 text-xs font-semibold">
-                    Maximum available: ~{formatUSDT(maxLiquidity)}
+                  <p className="text-orange-200 text-xs">
+                    Please reduce your trade amount. Try using the "Max" button for the maximum tradeable amount.
                   </p>
                 </div>
               );
@@ -189,9 +199,8 @@ export const TradeModal = ({
                 const amount = parseFloat(betAmount);
                 const fee = amount * (FEE_PERCENTAGE / 100);
                 const netAmount = amount - fee;
-                const poolAvailable = selectedMarket.poolSeed * (1 - selectedMarket.poolUsage);
-                const orderBookDepth = selectedMarket.orderBookDepth || 0;
-                const maxLiquidity = (poolAvailable + orderBookDepth) * 0.95;
+                const relevantPool = betType === 'yes' ? selectedMarket.noPool : selectedMarket.yesPool;
+                const maxLiquidity = relevantPool * 0.95;
 
                 return netAmount > maxLiquidity;
               })()}
@@ -204,12 +213,11 @@ export const TradeModal = ({
                   const amount = parseFloat(betAmount);
                   const fee = amount * (FEE_PERCENTAGE / 100);
                   const netAmount = amount - fee;
-                  const poolAvailable = selectedMarket.poolSeed * (1 - selectedMarket.poolUsage);
-                  const orderBookDepth = selectedMarket.orderBookDepth || 0;
-                  const maxLiquidity = (poolAvailable + orderBookDepth) * 0.95;
+                  const relevantPool = betType === 'yes' ? selectedMarket.noPool : selectedMarket.yesPool;
+                  const maxLiquidity = relevantPool * 0.95;
 
                   if (netAmount > maxLiquidity) {
-                    return 'Insufficient Liquidity';
+                    return 'Amount Too Large';
                   }
                 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import OrderBook from './OrderBook';
 import TradingForm from './TradingForm';
 import { orderBookAPI } from '../services/api';
@@ -6,27 +6,23 @@ import { orderBookAPI } from '../services/api';
 export default function MarketTradingView({ market, userAddress, onBack }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [userOrders, setUserOrders] = useState([]);
-  const [loadingOrders, setLoadingOrders] = useState(false);
 
-  useEffect(() => {
-    if (userAddress && market?.id) {
-      loadUserOrders();
-    }
-  }, [userAddress, market?.id, refreshKey]);
-
-  async function loadUserOrders() {
+  const loadUserOrders = useCallback(async () => {
     if (!userAddress || !market?.id) return;
 
-    setLoadingOrders(true);
     try {
       const orders = await orderBookAPI.getUserOrders(userAddress, market.id);
       setUserOrders(orders.filter(o => o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED'));
     } catch (err) {
       console.error('Failed to load user orders:', err);
-    } finally {
-      setLoadingOrders(false);
     }
-  }
+  }, [userAddress, market?.id]);
+
+  useEffect(() => {
+    if (userAddress && market?.id) {
+      loadUserOrders();
+    }
+  }, [userAddress, market?.id, refreshKey, loadUserOrders]);
 
   function handleOrderPlaced() {
     setRefreshKey(prev => prev + 1); // Force order book and user orders refresh

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { orderBookAPI } from '../services/api';
 
 export default function OrderBook({ marketId, onSelectPrice }) {
@@ -8,13 +8,7 @@ export default function OrderBook({ marketId, onSelectPrice }) {
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
 
-  useEffect(() => {
-    loadOrderBook();
-    const interval = setInterval(loadOrderBook, 3000); // Refresh every 3s
-    return () => clearInterval(interval);
-  }, [marketId]);
-
-  async function loadOrderBook() {
+  const loadOrderBook = useCallback(async () => {
     try {
       const orderBook = await orderBookAPI.getOrderBook(marketId);
 
@@ -47,7 +41,13 @@ export default function OrderBook({ marketId, onSelectPrice }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [marketId]);
+
+  useEffect(() => {
+    loadOrderBook();
+    const interval = setInterval(loadOrderBook, 3000); // Refresh every 3s
+    return () => clearInterval(interval);
+  }, [loadOrderBook]);
 
   if (loading) {
     return (
