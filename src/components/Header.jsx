@@ -1,10 +1,11 @@
-import React from 'react';
-import { TrendingUp, Wallet, AlertCircle, Search, Plus, BarChart3, PieChart, Activity } from 'lucide-react';
+import React, { useState } from 'react';
+import { TrendingUp, Wallet, AlertCircle, Search, Plus, BarChart3, PieChart, Activity, RefreshCw } from 'lucide-react';
 
 export const Header = ({
   walletConnected,
   walletAddress,
   usdtBalance,
+  refreshBalance,
   networkError,
   isPolygon,
   currentView,
@@ -21,6 +22,14 @@ export const Header = ({
   formatUSDT,
   formatAddress,
 }) => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (!refreshBalance || isRefreshing) return;
+    setIsRefreshing(true);
+    await refreshBalance();
+    setTimeout(() => setIsRefreshing(false), 1000); // Prevent rapid clicking
+  };
   return (
     <header className="bg-black bg-opacity-40 backdrop-blur-md border-b border-purple-500 border-opacity-30 md:sticky md:top-0 z-50">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-1.5 sm:py-4">
@@ -50,6 +59,17 @@ export const Header = ({
                 <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2">
                   <span className="text-base sm:text-xl">💵</span>
                   <span className="font-semibold text-sm sm:text-base">{formatUSDT(usdtBalance)}</span>
+                  <button
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="ml-1 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-all disabled:opacity-50"
+                    title="Refresh balance"
+                  >
+                    <RefreshCw
+                      size={14}
+                      className={`${isRefreshing ? 'animate-spin' : ''}`}
+                    />
+                  </button>
                 </div>
                 <div className="hidden sm:flex bg-purple-500 bg-opacity-20 backdrop-blur-sm border border-purple-400 border-opacity-30 px-4 py-2 rounded-lg items-center gap-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -103,6 +123,11 @@ export const Header = ({
               <TrendingUp size={14} className="sm:w-[18px] sm:h-[18px]" />
               <span className="hidden sm:inline">Trending</span>
               <span className="sm:hidden text-base">🔥</span>
+            </button>
+            <button onClick={() => setCurrentView('orderbook')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'orderbook' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+              <BarChart3 size={14} className="sm:w-[18px] sm:h-[18px]" />
+              <span className="hidden sm:inline">Order Book</span>
+              <span className="sm:hidden text-base">📖</span>
             </button>
           </div>
           {currentView === 'markets' && (

@@ -15,6 +15,7 @@ import TermsContent from './components/TermsContent';
 import PrivacyContent from './components/PrivacyContent';
 import { initAnalytics } from './utils/analytics';
 import { useAnalytics, useViewTracking } from './hooks/useAnalytics';
+import OrderBookMarkets from './components/OrderBookMarkets';
 
 export default function OutcomeBazaar() {
   const {
@@ -1497,6 +1498,10 @@ export default function OutcomeBazaar() {
               )}
             </div>
           </>
+        )}
+
+        {currentView === 'orderbook' && (
+          <OrderBookMarkets userAddress={walletAddress} />
         )}
       </main>
       <TradeModal
