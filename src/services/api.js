@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_ORDERBOOK_API || process.env.NEXT_PUBLIC_ORDERBOOK_API || 'http://localhost:3001';
+const API_BASE = process.env.REACT_APP_ORDERBOOK_API || 'http://localhost:3001';
 
 class OrderBookAPI {
   async getMarkets() {
