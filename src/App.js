@@ -1157,7 +1157,7 @@ export default function OutcomeBazaar() {
   }, [lastScrollY]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 overflow-x-hidden">
       <Header
         walletConnected={walletConnected}
         walletAddress={walletAddress}
@@ -1460,9 +1460,9 @@ export default function OutcomeBazaar() {
         )}
       </main>
 
-      {/* Active Markets — full width, outside the constrained main */}
+      {/* Active Markets — true full viewport width */}
       {currentView === 'markets' && (
-        <div className="w-full px-4 sm:px-8 pb-12 pt-2">
+        <div className="w-screen relative left-1/2 -translate-x-1/2 px-4 sm:px-16 pb-12 pt-2">
           {/* Active Markets Section */}
           <div className="flex items-center gap-3 mb-6 mt-8">
             <h2 className="text-2xl font-bold text-white">Active Markets</h2>
