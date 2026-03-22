@@ -1476,7 +1476,7 @@ export default function OutcomeBazaar() {
               <p className="text-purple-300">All markets have been resolved. Check Past Markets below to see outcomes.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="w-full space-y-6">
               {filteredMarkets.map(market => (
                 <MarketCard
                   key={`${market.id}-${market.yesPrice}-${market.noPrice}`}
@@ -1495,22 +1495,35 @@ export default function OutcomeBazaar() {
                   <button
                     key={market.id}
                     onClick={() => setCurrentView('orderbook')}
-                    className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl border border-purple-500 border-opacity-30 overflow-hidden hover:border-opacity-60 transition-all text-left p-6"
+                    className="block w-full group bg-black bg-opacity-40 backdrop-blur-md rounded-2xl border border-purple-500 border-opacity-30 hover:border-opacity-60 hover:bg-purple-900 hover:bg-opacity-10 transition-all duration-300 text-left p-8"
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="px-3 py-1 bg-purple-500 bg-opacity-30 text-purple-300 text-xs font-semibold rounded-full capitalize">{market.category}</span>
-                      <span className="flex items-center gap-1 text-xs text-green-400">
-                        <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse inline-block"></span>
-                        Live
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">{market.question}</h3>
-                    <p className="text-purple-300 text-sm mb-4 line-clamp-2">{market.description}</p>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-purple-400 font-medium">Trade on Order Book →</span>
-                      <span className="text-gray-400">
-                        {daysLeft > 0 ? `${daysLeft}d left` : 'Ends today'} · {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="inline-flex items-center gap-3 mb-4">
+                          <span className="px-4 py-1.5 bg-purple-500 bg-opacity-30 text-purple-300 text-sm font-semibold uppercase rounded-full capitalize">{market.category}</span>
+                          <span className="flex items-center gap-1.5 text-sm text-green-400">
+                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse inline-block"></span>
+                            Live
+                          </span>
+                        </div>
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-pink-400 group-hover:bg-clip-text transition-all">
+                          {market.question}
+                        </h3>
+                        <p className="text-gray-400 text-base mb-6 max-w-4xl">{market.description}</p>
+                        <div className="flex items-center gap-2 text-purple-400 group-hover:text-purple-300 transition-colors">
+                          <span className="font-semibold">Trade on Order Book</span>
+                          <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="ml-8 sm:ml-12 flex-shrink-0 bg-purple-500 bg-opacity-10 border border-purple-500 border-opacity-20 rounded-xl p-6 min-w-[160px] text-right">
+                        <div className="text-xs text-gray-400 mb-1">Time Remaining</div>
+                        <div className="text-2xl font-bold text-white">{daysLeft > 0 ? `${daysLeft}d` : 'Today'}</div>
+                        <div className="text-xs text-purple-400 mt-3 pt-3 border-t border-purple-500 border-opacity-20">
+                          {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                      </div>
                     </div>
                   </button>
                 );
@@ -1527,7 +1540,7 @@ export default function OutcomeBazaar() {
                   {resolvedMarkets.length} Resolved
                 </span>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="w-full space-y-6">
                 {resolvedMarkets.map(market => (
                   <MarketCard
                     key={`${market.id}-${market.yesPrice}-${market.noPrice}`}
