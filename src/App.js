@@ -40,7 +40,7 @@ export default function OutcomeBazaar() {
   // Analytics hook
   const analytics = useAnalytics();
 
-  const [currentView, setCurrentView] = useState('orderbook');
+  const [currentView, setCurrentView] = useState('markets');
 
   // Track view changes
   useViewTracking(currentView);
