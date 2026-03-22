@@ -94,11 +94,13 @@ export default function OutcomeBazaar() {
 
   const [markets, setMarkets] = useState([]);
   const [obMarkets, setObMarkets] = useState([]);
+  const [obMarketsLoading, setObMarketsLoading] = useState(true);
 
   useEffect(() => {
     orderBookAPI.getMarkets()
       .then(data => setObMarkets(Array.isArray(data) ? data : []))
-      .catch(err => console.error('Failed to load order book markets:', err));
+      .catch(err => console.error('Failed to load order book markets:', err))
+      .finally(() => setObMarketsLoading(false));
   }, []);
 
   // Load markets from blockchain
@@ -1460,17 +1462,17 @@ export default function OutcomeBazaar() {
         )}
       </main>
 
-      {/* Active Markets — true full viewport width */}
+      {/* Active Markets — same width as feature cards above */}
       {currentView === 'markets' && (
-        <div className="w-screen relative left-1/2 -translate-x-1/2 px-4 sm:px-16 pb-12 pt-2">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-12">
           {/* Active Markets Section */}
           <div className="flex items-center gap-3 mb-6 mt-8">
             <h2 className="text-2xl font-bold text-white">Active Markets</h2>
             <span className="px-3 py-1 bg-green-500 bg-opacity-20 text-green-300 text-sm font-semibold rounded-full">
-              {filteredMarkets.length + obMarkets.length} Open
+              {obMarketsLoading ? '...' : `${filteredMarkets.length + obMarkets.length} Open`}
             </span>
           </div>
-          {filteredMarkets.length === 0 && obMarkets.length === 0 ? (
+          {!obMarketsLoading && filteredMarkets.length === 0 && obMarkets.length === 0 ? (
             <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-12 border border-purple-500 border-opacity-30 text-center mb-8">
               <h3 className="text-xl font-semibold text-white mb-2">No Active Markets</h3>
               <p className="text-purple-300">All markets have been resolved. Check Past Markets below to see outcomes.</p>
