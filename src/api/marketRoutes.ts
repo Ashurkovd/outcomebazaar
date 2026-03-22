@@ -7,6 +7,10 @@ import { OrderBookManager } from '../matching/OrderBookManager';
 const qs = (val: unknown): string | undefined =>
   typeof val === 'string' ? val : undefined;
 
+// Express headers can be string | string[] - normalize to string
+const getHeader = (val: string | string[] | undefined): string | undefined =>
+  Array.isArray(val) ? val[0] : val;
+
 export function createMarketRoutes(
   db: DatabaseService,
   ctf: CTFService,
@@ -76,9 +80,7 @@ export function createMarketRoutes(
   router.post('/admin/create', async (req: Request, res: Response) => {
     try {
       // Simple API key auth - replace with proper auth in production
-      const apiKey = Array.isArray(req.headers['x-admin-key'])
-        ? req.headers['x-admin-key'][0]
-        : req.headers['x-admin-key'];
+      const apiKey = getHeader(req.headers['x-admin-key']);
       if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -132,9 +134,7 @@ export function createMarketRoutes(
   // POST /api/markets/admin/create-db - Create market in DB only (no blockchain, ADMIN ONLY)
   router.post('/admin/create-db', async (req: Request, res: Response) => {
     try {
-      const apiKey = Array.isArray(req.headers['x-admin-key'])
-        ? req.headers['x-admin-key'][0]
-        : req.headers['x-admin-key'];
+      const apiKey = getHeader(req.headers['x-admin-key']);
       if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -180,9 +180,7 @@ export function createMarketRoutes(
   // DELETE /api/markets/admin/:id - Delete a market (ADMIN ONLY)
   router.delete('/admin/:id', async (req: Request, res: Response) => {
     try {
-      const apiKey = Array.isArray(req.headers['x-admin-key'])
-        ? req.headers['x-admin-key'][0]
-        : req.headers['x-admin-key'];
+      const apiKey = getHeader(req.headers['x-admin-key']);
       if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -193,7 +191,7 @@ export function createMarketRoutes(
         return res.status(404).json({ error: 'Market not found' });
       }
 
-      await db['pool'].query('DELETE FROM markets WHERE id = $1', [id]);
+      await db.deleteMarket(id);
 
       console.log(`✅ Market deleted: ${id}`);
       res.json({ success: true, message: 'Market deleted' });
@@ -206,9 +204,7 @@ export function createMarketRoutes(
   // POST /api/admin/markets/:id/resolve - Resolve market (ADMIN ONLY)
   router.post('/admin/:id/resolve', async (req: Request, res: Response) => {
     try {
-      const apiKey = Array.isArray(req.headers['x-admin-key'])
-        ? req.headers['x-admin-key'][0]
-        : req.headers['x-admin-key'];
+      const apiKey = getHeader(req.headers['x-admin-key']);
       if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
       }

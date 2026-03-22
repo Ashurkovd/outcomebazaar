@@ -59,6 +59,10 @@ export class DatabaseService {
     return result.rows[0] ? this.rowToMarket(result.rows[0]) : null;
   }
 
+  async deleteMarket(marketId: string): Promise<void> {
+    await this.pool.query('DELETE FROM markets WHERE id = $1', [marketId]);
+  }
+
   async getActiveMarkets(category?: string): Promise<Market[]> {
     const query = category
       ? `SELECT * FROM markets WHERE status = 'ACTIVE' AND category = $1 ORDER BY end_time ASC`
