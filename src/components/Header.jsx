@@ -104,7 +104,7 @@ export const Header = ({
         )}
         <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
           <div className="flex gap-1 sm:gap-2 flex-1 min-w-0">
-            <button onClick={() => setCurrentView('markets')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'markets' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
+            <button onClick={() => setCurrentView('orderbook')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'orderbook' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
               <BarChart3 size={14} className="sm:w-[18px] sm:h-[18px]" />
               <span className="hidden sm:inline">Markets</span>
               <span className="sm:hidden text-base">📊</span>
@@ -123,11 +123,6 @@ export const Header = ({
               <TrendingUp size={14} className="sm:w-[18px] sm:h-[18px]" />
               <span className="hidden sm:inline">Trending</span>
               <span className="sm:hidden text-base">🔥</span>
-            </button>
-            <button onClick={() => setCurrentView('orderbook')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'orderbook' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-              <BarChart3 size={14} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="hidden sm:inline">Order Book</span>
-              <span className="sm:hidden text-base">📖</span>
             </button>
           </div>
           {currentView === 'markets' && (
