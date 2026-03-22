@@ -16,6 +16,7 @@ import PrivacyContent from './components/PrivacyContent';
 import { initAnalytics } from './utils/analytics';
 import { useAnalytics, useViewTracking } from './hooks/useAnalytics';
 import OrderBookMarkets from './components/OrderBookMarkets';
+import { orderBookAPI } from './services/api';
 
 export default function OutcomeBazaar() {
   const {
@@ -92,6 +93,7 @@ export default function OutcomeBazaar() {
   };
 
   const [markets, setMarkets] = useState([]);
+  const [obMarkets, setObMarkets] = useState([]);
 
   // Load markets from blockchain
   const loadMarkets = async () => {
@@ -1102,6 +1104,13 @@ export default function OutcomeBazaar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contracts?.factory, provider]);
 
+  // Load order book markets (always, no wallet required)
+  useEffect(() => {
+    orderBookAPI.getMarkets()
+      .then(data => setObMarkets(Array.isArray(data) ? data : []))
+      .catch(err => console.error('Failed to load order book markets:', err));
+  }, []);
+
   // Check if user has accepted terms - DISABLED
   // useEffect(() => {
   //   const hasAcceptedTerms = localStorage.getItem('outcomebazaar_terms_accepted');
@@ -1259,16 +1268,16 @@ export default function OutcomeBazaar() {
             <div className="flex items-center gap-3 mb-6 mt-8">
               <h2 className="text-2xl font-bold text-white">Active Markets</h2>
               <span className="px-3 py-1 bg-green-500 bg-opacity-20 text-green-300 text-sm font-semibold rounded-full">
-                {filteredMarkets.length} Open
+                {filteredMarkets.length + obMarkets.length} Open
               </span>
             </div>
-            {filteredMarkets.length === 0 ? (
+            {filteredMarkets.length === 0 && obMarkets.length === 0 ? (
               <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl p-12 border border-purple-500 border-opacity-30 text-center mb-8">
                 <h3 className="text-xl font-semibold text-white mb-2">No Active Markets</h3>
-                <p className="text-purple-300">All markets have been resolved. Check Past Markets below to see outcomes.</p>
+                <p className="text-purple-300">Check back soon for upcoming events.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {filteredMarkets.map(market => (
                   <MarketCard
                     key={`${market.id}-${market.yesPrice}-${market.noPrice}`}
@@ -1280,6 +1289,33 @@ export default function OutcomeBazaar() {
                     formatUSDT={formatUSDT}
                   />
                 ))}
+                {obMarkets.map(market => {
+                  const endDate = new Date(market.endTime);
+                  const daysLeft = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
+                  return (
+                    <button
+                      key={market.id}
+                      onClick={() => setCurrentView('orderbook')}
+                      className="bg-black bg-opacity-40 backdrop-blur-md rounded-xl border border-purple-500 border-opacity-30 overflow-hidden hover:border-opacity-60 transition-all text-left p-6"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-3 py-1 bg-purple-500 bg-opacity-30 text-purple-300 text-xs font-semibold rounded-full capitalize">{market.category}</span>
+                        <span className="flex items-center gap-1 text-xs text-green-400">
+                          <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse inline-block"></span>
+                          Live
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">{market.question}</h3>
+                      <p className="text-purple-400 text-sm mb-4 line-clamp-2">{market.description}</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-purple-300">Order Book Trading</span>
+                        <span className="text-gray-400">
+                          {daysLeft > 0 ? `${daysLeft}d left` : 'Ends today'} · {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
 
