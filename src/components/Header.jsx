@@ -36,7 +36,7 @@ export const Header = ({
         <div className="flex items-center justify-between mb-1.5 sm:mb-4">
           <button
             onClick={() => {
-              setCurrentView('orderbook');
+              setCurrentView('markets');
               setSearchTerm('');
               setSelectedCategory('All');
             }}
