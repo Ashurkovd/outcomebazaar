@@ -60,6 +60,9 @@ export class DatabaseService {
   }
 
   async deleteMarket(marketId: string): Promise<void> {
+    await this.pool.query('DELETE FROM price_history WHERE market_id = $1', [marketId]);
+    await this.pool.query('DELETE FROM trades WHERE market_id = $1', [marketId]);
+    await this.pool.query('DELETE FROM orders WHERE market_id = $1', [marketId]);
     await this.pool.query('DELETE FROM markets WHERE id = $1', [marketId]);
   }
 
