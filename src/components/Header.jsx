@@ -124,11 +124,6 @@ export const Header = ({
               <span className="hidden sm:inline">Trending</span>
               <span className="sm:hidden text-base">🔥</span>
             </button>
-            <button onClick={() => setCurrentView('orderbook')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'orderbook' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
-              <BarChart3 size={14} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="hidden sm:inline">Order Book</span>
-              <span className="sm:hidden text-base">📖</span>
-            </button>
           </div>
           {currentView === 'markets' && (
             <button onClick={() => setShowCreateMarket(true)} className="px-3 sm:px-4 py-2.5 sm:py-2 bg-green-500 bg-opacity-20 hover:bg-opacity-30 text-green-300 rounded-lg font-medium transition-all flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base whitespace-nowrap">
