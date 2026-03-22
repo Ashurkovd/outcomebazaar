@@ -47,7 +47,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
   const outcomeLabel = outcome === 0 ? 'YES' : 'NO';
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6">
+    <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-2xl p-6 border border-purple-500 border-opacity-20">
       <h3 className="text-xl font-bold text-white mb-4">Place Order</h3>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -61,7 +61,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
               className={`py-3 rounded font-semibold transition ${
                 outcome === 0
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-purple-900 bg-opacity-20 text-gray-300 hover:bg-opacity-40 border border-purple-500 border-opacity-20'
               }`}
             >
               YES
@@ -72,7 +72,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
               className={`py-3 rounded font-semibold transition ${
                 outcome === 1
                   ? 'bg-purple-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-purple-900 bg-opacity-20 text-gray-300 hover:bg-opacity-40 border border-purple-500 border-opacity-20'
               }`}
             >
               NO
@@ -90,7 +90,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
               className={`py-3 rounded font-semibold transition ${
                 side === 'BUY'
                   ? 'bg-green-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-purple-900 bg-opacity-20 text-gray-300 hover:bg-opacity-40 border border-purple-500 border-opacity-20'
               }`}
             >
               Buy {outcomeLabel}
@@ -101,7 +101,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
               className={`py-3 rounded font-semibold transition ${
                 side === 'SELL'
                   ? 'bg-red-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-purple-900 bg-opacity-20 text-gray-300 hover:bg-opacity-40 border border-purple-500 border-opacity-20'
               }`}
             >
               Sell {outcomeLabel}
@@ -120,7 +120,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
             max="99"
             value={price}
             onChange={(e) => setPrice(parseInt(e.target.value) || 1)}
-            className="w-full bg-gray-700 text-white rounded px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full bg-purple-900 bg-opacity-20 border border-purple-500 border-opacity-20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
           />
           <div className="text-xs text-gray-400 mt-1">
             {price}% probability
@@ -138,7 +138,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
             step="0.01"
             value={size}
             onChange={(e) => setSize(parseFloat(e.target.value) || 1)}
-            className="w-full bg-gray-700 text-white rounded px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full bg-purple-900 bg-opacity-20 border border-purple-500 border-opacity-20 text-white rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
           />
           <div className="text-xs text-gray-400 mt-1">
             Minimum: 1 USDT
@@ -146,7 +146,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
         </div>
 
         {/* Summary */}
-        <div className="bg-gray-700 rounded p-4 space-y-2 text-sm">
+        <div className="bg-purple-900 bg-opacity-20 border border-purple-500 border-opacity-10 rounded-xl p-4 space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-400">Order Type</span>
             <span className="text-white font-semibold">
@@ -161,7 +161,7 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
             <span className="text-gray-400">Potential Profit</span>
             <span className="text-green-400 font-semibold">${potentialProfit}</span>
           </div>
-          <div className="flex justify-between text-xs pt-2 border-t border-gray-600">
+          <div className="flex justify-between text-xs pt-2 border-t border-purple-500 border-opacity-20">
             <span className="text-gray-400">Shares</span>
             <span className="text-white">{size}</span>
           </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import OrderBook from './OrderBook';
 import TradingForm from './TradingForm';
+import PriceChart from './PriceChart';
 import { orderBookAPI } from '../services/api';
 
 export default function MarketTradingView({ market, userAddress, onBack }) {
@@ -43,61 +44,76 @@ export default function MarketTradingView({ market, userAddress, onBack }) {
 
   const endDate = new Date(market.endTime);
   const isExpired = endDate < new Date();
+  const daysLeft = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
 
   return (
-    <div className="min-h-screen py-8">
-      {/* Back Button */}
-      {onBack && (
-        <div className="max-w-7xl mx-auto px-4 mb-4">
+    <div className="py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4">
+        {/* Back Button */}
+        {onBack && (
           <button
             onClick={onBack}
-            className="text-blue-400 hover:text-blue-300 flex items-center gap-2"
+            className="inline-flex items-center text-purple-400 hover:text-purple-300 mb-6 transition-colors group"
           >
-            ← Back to Markets
+            <svg className="w-5 h-5 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Markets
           </button>
-        </div>
-      )}
+        )}
 
-      <div className="max-w-7xl mx-auto px-4">
         {/* Market Header */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <div className="flex items-start justify-between">
+        <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-2xl p-6 sm:p-8 mb-8 border border-purple-500 border-opacity-20">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
             <div className="flex-1">
-              <span className="text-sm text-blue-400 font-semibold uppercase">
-                {market.category}
-              </span>
-              <h1 className="text-3xl font-bold text-white mt-2">
+              {/* Category + Status */}
+              <div className="inline-flex items-center gap-3 mb-4">
+                <span className="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold uppercase rounded-full">
+                  {market.category}
+                </span>
+                {market.status === 'ACTIVE' && (
+                  <span className="flex items-center gap-1.5 text-sm text-green-400">
+                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse inline-block"></span>
+                    Live
+                  </span>
+                )}
+              </div>
+
+              {/* Question */}
+              <h1 className="text-2xl sm:text-4xl font-bold mb-3 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                 {market.question}
               </h1>
-              <p className="text-gray-400 mt-2">{market.description}</p>
-            </div>
-            <div className="text-right ml-6">
-              <div className="text-sm text-gray-400">
-                {isExpired ? 'Ended' : 'Ends'}
-              </div>
-              <div className={`font-semibold ${isExpired ? 'text-red-400' : 'text-white'}`}>
-                {endDate.toLocaleDateString()}
-              </div>
-              {market.status && (
-                <div className={`text-xs mt-1 px-2 py-1 rounded inline-block ${
-                  market.status === 'ACTIVE' ? 'bg-green-900/20 text-green-400' :
-                  market.status === 'RESOLVED' ? 'bg-blue-900/20 text-blue-400' :
-                  'bg-gray-700 text-gray-400'
-                }`}>
-                  {market.status}
-                </div>
+
+              {/* Description */}
+              {market.description && (
+                <p className="text-gray-400 text-base sm:text-lg">
+                  {market.description}
+                </p>
               )}
+            </div>
+
+            {/* End Date Card */}
+            <div className="flex-shrink-0 bg-purple-500 bg-opacity-10 border border-purple-500 border-opacity-20 rounded-xl p-5 min-w-[160px] text-right">
+              <div className="text-xs text-gray-400 mb-1">
+                {isExpired ? 'Ended' : 'Time Remaining'}
+              </div>
+              <div className={`text-2xl font-bold ${isExpired ? 'text-red-400' : 'text-white'}`}>
+                {isExpired ? 'Ended' : daysLeft > 0 ? `${daysLeft}d` : 'Today'}
+              </div>
+              <div className="text-xs text-purple-400 mt-3 pt-3 border-t border-purple-500 border-opacity-20">
+                {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
             </div>
           </div>
         </div>
 
         {/* User's Open Orders */}
         {userAddress && userOrders.length > 0 && (
-          <div className="bg-gray-800 rounded-lg p-6 mb-6">
-            <h3 className="text-xl font-bold text-white mb-4">Your Open Orders</h3>
+          <div className="bg-black bg-opacity-40 backdrop-blur-md rounded-2xl p-6 mb-8 border border-purple-500 border-opacity-20">
+            <h3 className="text-lg font-bold text-white mb-4">Your Open Orders</h3>
             <div className="space-y-2">
               {userOrders.map(order => (
-                <div key={order.id} className="bg-gray-700 rounded p-3 flex justify-between items-center">
+                <div key={order.id} className="bg-purple-500 bg-opacity-10 rounded-xl p-4 flex justify-between items-center border border-purple-500 border-opacity-10">
                   <div>
                     <span className={`font-semibold ${order.side === 'BUY' ? 'text-green-400' : 'text-red-400'}`}>
                       {order.side}
@@ -120,9 +136,13 @@ export default function MarketTradingView({ market, userAddress, onBack }) {
           </div>
         )}
 
-        {/* Trading Interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Order Book - 2 columns */}
+        {/* Price Chart - Full Width */}
+        <div className="mb-8">
+          <PriceChart marketId={market.id} />
+        </div>
+
+        {/* Order Book + Trading Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           <div className="lg:col-span-2">
             <OrderBook
               key={refreshKey}
@@ -130,8 +150,6 @@ export default function MarketTradingView({ market, userAddress, onBack }) {
               onSelectPrice={handlePriceClick}
             />
           </div>
-
-          {/* Trading Form - 1 column */}
           <div>
             <TradingForm
               marketId={market.id}
