@@ -58,10 +58,10 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
             <button
               type="button"
               onClick={() => setOutcome(0)}
-              className={`py-3 rounded font-semibold transition ${
+              className={`py-3 rounded-lg font-semibold transition-all ${
                 outcome === 0
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-purple-900 bg-opacity-20 text-gray-300 hover:bg-opacity-40 border border-purple-500 border-opacity-20'
+                  ? 'bg-gradient-to-r from-pink-600 to-pink-700 text-white shadow-lg shadow-pink-500/30'
+                  : 'bg-purple-900 bg-opacity-20 text-gray-400 hover:bg-opacity-40 border border-pink-500 border-opacity-20'
               }`}
             >
               YES
@@ -69,10 +69,10 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
             <button
               type="button"
               onClick={() => setOutcome(1)}
-              className={`py-3 rounded font-semibold transition ${
+              className={`py-3 rounded-lg font-semibold transition-all ${
                 outcome === 1
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-purple-900 bg-opacity-20 text-gray-300 hover:bg-opacity-40 border border-purple-500 border-opacity-20'
+                  ? 'bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-lg shadow-orange-500/30'
+                  : 'bg-purple-900 bg-opacity-20 text-gray-400 hover:bg-opacity-40 border border-orange-500 border-opacity-20'
               }`}
             >
               NO
