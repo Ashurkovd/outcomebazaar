@@ -185,7 +185,7 @@ export function createMarketRoutes(
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      const { id } = req.params;
+      const id = String(req.params.id);
       const market = await db.getMarket(id);
       if (!market) {
         return res.status(404).json({ error: 'Market not found' });
