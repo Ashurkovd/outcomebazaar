@@ -129,6 +129,80 @@ export function createMarketRoutes(
     }
   });
 
+  // POST /api/markets/admin/create-db - Create market in DB only (no blockchain, ADMIN ONLY)
+  router.post('/admin/create-db', async (req: Request, res: Response) => {
+    try {
+      const apiKey = Array.isArray(req.headers['x-admin-key'])
+        ? req.headers['x-admin-key'][0]
+        : req.headers['x-admin-key'];
+      if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const { question, description, category, endTime, creator } = req.body;
+
+      if (!question || !category || !endTime) {
+        return res.status(400).json({ error: 'question, category, and endTime are required' });
+      }
+
+      const end = new Date(endTime);
+      if (isNaN(end.getTime()) || end <= new Date()) {
+        return res.status(400).json({ error: 'endTime must be a valid future date' });
+      }
+
+      const questionId = CTFService.generateQuestionId(question);
+      // Derive a deterministic market ID from question (no on-chain tx needed)
+      const conditionId = '0x' + Buffer.from(questionId.slice(2), 'hex')
+        .slice(0, 32).toString('hex').padStart(64, '0');
+
+      const adminAddress = creator || '0x0000000000000000000000000000000000000000';
+
+      const market = await db.createMarket({
+        id: conditionId,
+        questionId,
+        question,
+        description,
+        category: category.toLowerCase(),
+        creator: adminAddress,
+        resolver: adminAddress,
+        endTime: end,
+        status: 'ACTIVE',
+      } as any);
+
+      console.log(`✅ Market created (DB-only): ${conditionId}`);
+      res.status(201).json({ market });
+    } catch (error) {
+      console.error('POST /admin/create-db error:', error);
+      res.status(500).json({ error: 'Failed to create market', details: (error as Error).message });
+    }
+  });
+
+  // DELETE /api/markets/admin/:id - Delete a market (ADMIN ONLY)
+  router.delete('/admin/:id', async (req: Request, res: Response) => {
+    try {
+      const apiKey = Array.isArray(req.headers['x-admin-key'])
+        ? req.headers['x-admin-key'][0]
+        : req.headers['x-admin-key'];
+      if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const { id } = req.params;
+      const market = await db.getMarket(id);
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+
+      await db['pool'].query('DELETE FROM markets WHERE id = $1', [id]);
+
+      console.log(`✅ Market deleted: ${id}`);
+      res.json({ success: true, message: 'Market deleted' });
+    } catch (error) {
+      console.error('DELETE /admin/:id error:', error);
+      res.status(500).json({ error: 'Failed to delete market' });
+    }
+  });
+
   // POST /api/admin/markets/:id/resolve - Resolve market (ADMIN ONLY)
   router.post('/admin/:id/resolve', async (req: Request, res: Response) => {
     try {
