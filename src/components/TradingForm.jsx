@@ -60,8 +60,8 @@ export default function TradingForm({ marketId, marketQuestion, userAddress, onO
               onClick={() => setOutcome(0)}
               className={`py-3 rounded-lg font-semibold transition-all ${
                 outcome === 0
-                  ? 'bg-gradient-to-r from-pink-600 to-pink-700 text-white shadow-lg shadow-pink-500/30'
-                  : 'bg-purple-900 bg-opacity-20 text-gray-400 hover:bg-opacity-40 border border-pink-500 border-opacity-20'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30'
+                  : 'bg-purple-900 bg-opacity-20 text-gray-400 hover:bg-opacity-40 border border-green-500 border-opacity-20'
               }`}
             >
               YES
