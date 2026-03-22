@@ -44,6 +44,13 @@ class OrderBookAPI {
     return data.orders || [];
   }
 
+  async getPriceHistory(marketId, outcomeIndex = 0, days = 7) {
+    const res = await fetch(`${API_BASE}/api/markets/${marketId}/price-history?outcome=${outcomeIndex}&days=${days}`);
+    if (!res.ok) throw new Error('Failed to fetch price history');
+    const data = await res.json();
+    return data.history || [];
+  }
+
   async healthCheck() {
     const res = await fetch(`${API_BASE}/api/health`);
     if (!res.ok) throw new Error('Backend unhealthy');

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import OrderBook from './OrderBook';
 import TradingForm from './TradingForm';
+import PriceChart from './PriceChart';
 import { orderBookAPI } from '../services/api';
 
 export default function MarketTradingView({ market, userAddress, onBack }) {
@@ -113,20 +114,26 @@ export default function MarketTradingView({ market, userAddress, onBack }) {
       )}
 
       {/* Trading Interface */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <OrderBook
-            key={refreshKey}
-            marketId={market.id}
-          />
-        </div>
-        <div>
-          <TradingForm
-            marketId={market.id}
-            marketQuestion={market.question}
-            userAddress={userAddress}
-            onOrderPlaced={handleOrderPlaced}
-          />
+      <div className="space-y-6">
+        {/* Price Chart - full width */}
+        <PriceChart marketId={market.id} />
+
+        {/* Order Book + Trading Form */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <OrderBook
+              key={refreshKey}
+              marketId={market.id}
+            />
+          </div>
+          <div>
+            <TradingForm
+              marketId={market.id}
+              marketQuestion={market.question}
+              userAddress={userAddress}
+              onOrderPlaced={handleOrderPlaced}
+            />
+          </div>
         </div>
       </div>
     </div>
