@@ -16,7 +16,6 @@ import PrivacyContent from './components/PrivacyContent';
 import { initAnalytics } from './utils/analytics';
 import { useAnalytics, useViewTracking } from './hooks/useAnalytics';
 import OrderBookMarkets from './components/OrderBookMarkets';
-import { orderBookAPI } from './services/api';
 
 export default function OutcomeBazaar() {
   const {
@@ -93,7 +92,6 @@ export default function OutcomeBazaar() {
   };
 
   const [markets, setMarkets] = useState([]);
-  const [obMarkets, setObMarkets] = useState([]);
 
   // Load markets from blockchain
   const loadMarkets = async () => {
@@ -1104,13 +1102,6 @@ export default function OutcomeBazaar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contracts?.factory, provider]);
 
-  // Load order book markets (always, no wallet required)
-  useEffect(() => {
-    orderBookAPI.getMarkets()
-      .then(data => setObMarkets(Array.isArray(data) ? data : []))
-      .catch(err => console.error('Failed to load order book markets:', err));
-  }, []);
-
   // Check if user has accepted terms - DISABLED
   // useEffect(() => {
   //   const hasAcceptedTerms = localStorage.getItem('outcomebazaar_terms_accepted');
@@ -1268,7 +1259,7 @@ export default function OutcomeBazaar() {
             <div className="flex items-center gap-3 mb-6 mt-8">
               <h2 className="text-2xl font-bold text-white">Active Markets</h2>
               <span className="px-3 py-1 bg-green-500 bg-opacity-20 text-green-300 text-sm font-semibold rounded-full">
-                {filteredMarkets.length + obMarkets.length} Open
+                {filteredMarkets.length} Open
               </span>
             </div>
             {filteredMarkets.length === 0 ? (
