@@ -58,10 +58,10 @@ export class OrderBookManager {
   /**
    * Get all open orders for a user across all markets.
    */
-  getUserOpenOrders(makerAddress: string): Order[] {
+  getUserOpenOrders(userId: string): Order[] {
     const orders: Order[] = [];
     for (const book of this.orderBooks.values()) {
-      orders.push(...book.getOpenOrdersForUser(makerAddress));
+      orders.push(...book.getOpenOrdersForUser(userId));
     }
     return orders;
   }
@@ -69,8 +69,8 @@ export class OrderBookManager {
   /**
    * Get all open orders for a user in a specific market.
    */
-  getUserOrdersInMarket(marketId: string, makerAddress: string): Order[] {
-    return this.orderBooks.get(marketId)?.getOpenOrdersForUser(makerAddress) ?? [];
+  getUserOrdersInMarket(marketId: string, userId: string): Order[] {
+    return this.orderBooks.get(marketId)?.getOpenOrdersForUser(userId) ?? [];
   }
 
   /**
@@ -95,5 +95,13 @@ export class OrderBookManager {
 
   getMarketCount(): number {
     return this.orderBooks.size;
+  }
+
+  /**
+   * Drop a market's entire in-memory book. Used when a market resolves or
+   * gets cancelled — DB is the source of truth from that point on.
+   */
+  destroy(marketId: string): boolean {
+    return this.orderBooks.delete(marketId);
   }
 }

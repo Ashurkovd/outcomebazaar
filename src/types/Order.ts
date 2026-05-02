@@ -4,7 +4,8 @@ export type OutcomeIndex = 0 | 1; // 0 = YES, 1 = NO
 
 export interface Order {
   id: string;
-  maker: string;           // User's wallet address
+  userId: string | null;   // Authenticated user (custodial v1). Null for legacy rows.
+  maker: string | null;    // Legacy wallet address (kept nullable for pre-v1 rows).
   market: string;          // Market ID (conditionId from Gnosis CTF)
   conditionId: string;     // Gnosis CTF condition ID (same as market)
   side: OrderSide;
@@ -15,7 +16,6 @@ export interface Order {
   status: OrderStatus;
   timestamp: number;       // Unix ms
   expiresAt: number;       // Unix ms
-  signature?: string;      // EIP-712 signature (for on-chain settlement)
 }
 
 export interface Trade {
@@ -58,12 +58,10 @@ export interface OrderBookSnapshot {
 
 export interface PlaceOrderRequest {
   marketId: string;
-  maker: string;
   side: OrderSide;
   outcomeIndex: OutcomeIndex;
   price: number;
   size: number;
-  signature?: string;
 }
 
 export interface PlaceOrderResponse {

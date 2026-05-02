@@ -163,7 +163,9 @@ export class OrderBook {
       price,
       size,
       timestamp: Date.now(),
-      status: 'PENDING',
+      // Phase 4: matching now settles in one DB transaction, so by the time
+      // this Trade reaches the API response it's already SETTLED.
+      status: 'SETTLED',
     };
   }
 
@@ -236,9 +238,9 @@ export class OrderBook {
     return this.orders.get(orderId);
   }
 
-  getOpenOrdersForUser(makerAddress: string): Order[] {
+  getOpenOrdersForUser(userId: string): Order[] {
     return Array.from(this.orders.values()).filter(
-      o => o.maker.toLowerCase() === makerAddress.toLowerCase() &&
+      o => o.userId === userId &&
            (o.status === 'OPEN' || o.status === 'PARTIALLY_FILLED')
     );
   }

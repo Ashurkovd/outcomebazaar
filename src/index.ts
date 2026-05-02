@@ -29,8 +29,9 @@ console.log('📦 Loading imports...');
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 
-console.log('   ✓ express, cors, dotenv loaded');
+console.log('   ✓ express, cors, dotenv, express-rate-limit loaded');
 
 dotenv.config();
 console.log('   ✓ dotenv.config() called');
@@ -38,8 +39,14 @@ console.log('   ✓ dotenv.config() called');
 import { OrderBookManager } from './matching/OrderBookManager';
 import { DatabaseService } from './database/DatabaseService';
 import { CTFService } from './services/CTFService';
+import { EmailService } from './services/EmailService';
+import { TronAddressService } from './services/TronAddressService';
+import { TronWatcher } from './services/TronWatcher';
 import { createMarketRoutes } from './api/marketRoutes';
 import { createOrderRoutes } from './api/orderRoutes';
+import { createAuthRoutes } from './api/authRoutes';
+import { createWithdrawalRoutes } from './api/withdrawalRoutes';
+import { geoBlock } from './middleware/geoBlock';
 
 console.log('✅ All imports loaded successfully');
 
@@ -54,6 +61,13 @@ const DATABASE_URL = process.env.DATABASE_URL || '';
 const RPC_URL = process.env.RPC_URL || 'https://polygon-rpc.com';
 const PRIVATE_KEY = process.env.PRIVATE_KEY || '';
 const NETWORK = (process.env.NETWORK || 'polygon') as 'polygon' | 'amoy';
+const JWT_SECRET = process.env.JWT_SECRET || '';
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const OTP_FROM_EMAIL = process.env.OTP_FROM_EMAIL || 'OutcomeBazaar <onboarding@resend.dev>';
+const TRON_HD_MNEMONIC = process.env.TRON_HD_MNEMONIC || '';
+const TRON_NETWORK = (process.env.TRON_NETWORK || 'mainnet') as 'mainnet' | 'shasta';
+const TRONGRID_API_KEY = process.env.TRONGRID_API_KEY;
+const TRON_WATCHER_ENABLED = (process.env.TRON_WATCHER_ENABLED ?? 'true').toLowerCase() !== 'false';
 
 console.log('✅ Environment variables loaded:');
 console.log('   DATABASE_URL exists:', !!DATABASE_URL);
@@ -62,10 +76,13 @@ console.log('   RPC_URL:', RPC_URL);
 console.log('   PORT:', PORT);
 console.log('   NETWORK:', NETWORK);
 console.log('   PRIVATE_KEY exists:', !!PRIVATE_KEY);
+console.log('   JWT_SECRET exists:', !!JWT_SECRET);
+console.log('   RESEND_API_KEY exists:', !!RESEND_API_KEY);
+console.log('   TRON_HD_MNEMONIC exists:', !!TRON_HD_MNEMONIC);
 
 // ── Validate required env vars ─────────────────────────────────────────────
 
-const missing = ['DATABASE_URL', 'PRIVATE_KEY'].filter(k => !process.env[k]);
+const missing = ['DATABASE_URL', 'PRIVATE_KEY', 'JWT_SECRET'].filter(k => !process.env[k]);
 if (missing.length > 0) {
   console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
   console.error('Copy .env.example to .env and fill in your values.');
@@ -100,13 +117,41 @@ async function startServer(): Promise<void> {
     const ctf = new CTFService(RPC_URL, PRIVATE_KEY, NETWORK);
     console.log('   ✓ CTFService created');
 
+    console.log('   Creating EmailService...');
+    const emailService = new EmailService(RESEND_API_KEY, OTP_FROM_EMAIL);
+    console.log('   ✓ EmailService created');
+
+    console.log('   Creating TronAddressService...');
+    const tronAddresses = TRON_HD_MNEMONIC
+      ? new TronAddressService(TRON_HD_MNEMONIC)
+      : null;
+    if (!tronAddresses) {
+      console.warn('   ⚠️  TRON_HD_MNEMONIC not set — deposit addresses disabled');
+    } else {
+      console.log('   ✓ TronAddressService created');
+    }
+
+    console.log('   Creating TronWatcher...');
+    const tronWatcher = tronAddresses && TRON_WATCHER_ENABLED
+      ? new TronWatcher(db, { network: TRON_NETWORK, apiKey: TRONGRID_API_KEY })
+      : null;
+    if (tronWatcher) {
+      console.log('   ✓ TronWatcher created');
+    } else {
+      console.log('   · TronWatcher disabled (no mnemonic or TRON_WATCHER_ENABLED=false)');
+    }
+
     console.log('✅ All services initialized');
 
     // ── Step 2: Create Express app ────────────────────────────────────────
 
     console.log('📍 CHECKPOINT 2 - Creating Express app...');
     const app = express();
-    console.log('✅ Express app created');
+
+    // Trust Cloudflare / Railway proxy so req.ip is the real client (used by
+    // rate limiter + geo-block) instead of the proxy IP.
+    app.set('trust proxy', 1);
+    console.log('✅ Express app created (trust proxy = 1)');
 
     // ── Step 3: Configure middleware ──────────────────────────────────────
 
@@ -144,6 +189,10 @@ async function startServer(): Promise<void> {
       next();
     });
     console.log('   ✓ Request logger configured');
+
+    // Geo-block — sits before all routes; exempts /api/health and /api/admin.
+    app.use(geoBlock);
+    console.log('   ✓ Geo-block middleware configured');
 
     console.log('✅ Middleware configured');
 
@@ -213,6 +262,27 @@ async function startServer(): Promise<void> {
     });
     console.log('   ✓ Health route added');
 
+    // Rate limiter for /api/auth/* — 5 OTP requests per 15min per IP.
+    const authLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 5,
+      standardHeaders: 'draft-7',
+      legacyHeaders: false,
+      message: { error: 'Too many requests — try again in 15 minutes' },
+    });
+
+    // Auth routes: POST /api/auth/request-otp, POST /api/auth/verify-otp + GET /api/me/*
+    console.log('   Adding auth + me routes...');
+    try {
+      const { auth: authRouter, me: meRouter } = createAuthRoutes(db, emailService, JWT_SECRET, tronAddresses);
+      app.use('/api/auth', authLimiter, authRouter);
+      app.use('/api/me', meRouter);
+      console.log('   ✓ Auth + me routes added');
+    } catch (routeError) {
+      console.error('   ❌ Error creating auth routes:', routeError);
+      throw routeError;
+    }
+
     // Market routes
     console.log('   Adding market routes...');
     try {
@@ -226,10 +296,23 @@ async function startServer(): Promise<void> {
     // Order routes
     console.log('   Adding order routes...');
     try {
-      app.use('/api/orders', createOrderRoutes(db, orderBooks));
+      app.use('/api/orders', createOrderRoutes(db, orderBooks, JWT_SECRET));
       console.log('   ✓ Order routes added');
     } catch (routeError) {
       console.error('   ❌ Error creating order routes:', routeError);
+      throw routeError;
+    }
+
+    // Withdrawal routes
+    console.log('   Adding withdrawal routes...');
+    try {
+      const { user: withdrawalUserRouter, admin: withdrawalAdminRouter } =
+        createWithdrawalRoutes(db, JWT_SECRET);
+      app.use('/api/withdrawals', withdrawalUserRouter);
+      app.use('/api/admin/withdrawals', withdrawalAdminRouter);
+      console.log('   ✓ Withdrawal routes added');
+    } catch (routeError) {
+      console.error('   ❌ Error creating withdrawal routes:', routeError);
       throw routeError;
     }
 
@@ -269,6 +352,12 @@ async function startServer(): Promise<void> {
       console.log(`  Time:     ${new Date().toISOString()}`);
       console.log('══════════════════════════════════════════════');
       console.log('');
+
+      // ── Step 8: Start background workers ─────────────────────────────
+      if (tronWatcher) {
+        tronWatcher.start();
+        console.log('🛰️  TronWatcher started');
+      }
     });
 
     // Server error handler

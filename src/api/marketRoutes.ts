@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { DatabaseService } from '../database/DatabaseService';
+import { DatabaseService, MarketNotResolvableError } from '../database/DatabaseService';
 import { CTFService } from '../services/CTFService';
 import { OrderBookManager } from '../matching/OrderBookManager';
+import { requireAdmin } from '../middleware/auth';
 
 // Express req.query values can be string | string[] | ParsedQs - always cast to string
 const qs = (val: unknown): string | undefined =>
@@ -132,13 +133,8 @@ export function createMarketRoutes(
   });
 
   // POST /api/markets/admin/create-db - Create market in DB only (no blockchain, ADMIN ONLY)
-  router.post('/admin/create-db', async (req: Request, res: Response) => {
+  router.post('/admin/create-db', requireAdmin, async (req: Request, res: Response) => {
     try {
-      const apiKey = getHeader(req.headers['x-admin-key']);
-      if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
       const { question, description, category, endTime, creator } = req.body;
 
       if (!question || !category || !endTime) {
@@ -178,13 +174,8 @@ export function createMarketRoutes(
   });
 
   // DELETE /api/markets/admin/:id - Delete a market (ADMIN ONLY)
-  router.delete('/admin/:id', async (req: Request, res: Response) => {
+  router.delete('/admin/:id', requireAdmin, async (req: Request, res: Response) => {
     try {
-      const apiKey = getHeader(req.headers['x-admin-key']);
-      if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
       const id = String(req.params.id);
       const market = await db.getMarket(id);
       if (!market) {
@@ -201,40 +192,37 @@ export function createMarketRoutes(
     }
   });
 
-  // POST /api/admin/markets/:id/resolve - Resolve market (ADMIN ONLY)
-  router.post('/admin/:id/resolve', async (req: Request, res: Response) => {
+  // POST /api/markets/admin/:id/resolve — Resolve a market (ADMIN ONLY)
+  //
+  // Custodial v1: pure-DB resolution. In one transaction:
+  //   - market flipped to RESOLVED with outcome 0 (YES) or 1 (NO)
+  //   - every open order on the market is cancelled and its lock released
+  //   - every position on the winning outcome gets credited shares × $1
+  //   - all positions on the market are zeroed (winners paid, losers worthless)
+  router.post('/admin/:id/resolve', requireAdmin, async (req: Request, res: Response) => {
     try {
-      const apiKey = getHeader(req.headers['x-admin-key']);
-      if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      const { outcome } = req.body; // 0 = YES wins, 1 = NO wins
+      const marketId = String(req.params.id);
+      const { outcome } = req.body ?? {};
 
       if (outcome !== 0 && outcome !== 1) {
         return res.status(400).json({ error: 'outcome must be 0 (YES) or 1 (NO)' });
       }
 
-      const market = await db.getMarket(String(req.params.id));
-      if (!market) {
-        return res.status(404).json({ error: 'Market not found' });
-      }
-      if (market.status !== 'ACTIVE') {
-        return res.status(400).json({ error: 'Market is not active' });
-      }
+      const result = await db.resolveMarketAndPayout(marketId, outcome as 0 | 1);
 
-      // Get the questionId from DB (needed for reportPayouts)
-      // We stored it as part of market creation
-      const questionId = (market as any).questionId;
+      // Flush in-memory order book so future snapshot/match calls on this
+      // market see nothing. DB is now the source of truth — all orders there
+      // are CANCELLED or FILLED.
+      orderBooks.destroy(marketId);
 
-      const yesWins = outcome === 0;
-      const txHash = await ctf.resolveMarket(questionId, yesWins);
-
-      await db.resolveMarket(String(req.params.id), outcome, txHash);
-
-      console.log(`✅ Market ${String(req.params.id)} resolved: ${yesWins ? 'YES' : 'NO'} wins`);
-      res.json({ success: true, outcome, txHash });
+      console.log(`✅ Market ${marketId} resolved to outcome=${outcome}; paid ${result.winnersPaid} winners (${result.totalPayout} USDT), cancelled ${result.ordersCancelled} open orders`);
+      res.json({ success: true, outcome, ...result });
     } catch (error) {
+      if (error instanceof MarketNotResolvableError) {
+        const msg = error.message;
+        const status = msg === 'Market not found' ? 404 : 400;
+        return res.status(status).json({ error: msg });
+      }
       console.error('POST /admin/resolve error:', error);
       res.status(500).json({ error: 'Failed to resolve market', details: (error as Error).message });
     }
