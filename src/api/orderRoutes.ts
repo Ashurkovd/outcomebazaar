@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import {
   DatabaseService,
   InsufficientBalanceError,
@@ -70,7 +70,7 @@ export function createOrderRoutes(
       // ── Build order ───────────────────────────────────────────────
       const sideUp = side.toUpperCase() as 'BUY' | 'SELL';
       const order: Order = {
-        id: uuidv4(),
+        id: randomUUID(),
         userId: req.user!.id,
         maker: null,
         market: marketId,
