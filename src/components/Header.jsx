@@ -1,35 +1,48 @@
 import React, { useState } from 'react';
-import { TrendingUp, Wallet, AlertCircle, Search, Plus, BarChart3, PieChart, Activity, RefreshCw } from 'lucide-react';
+import { TrendingUp, Search, Plus, BarChart3, PieChart, Activity, RefreshCw, LogOut, User } from 'lucide-react';
+
+const formatBalance = (n) => {
+  const num = typeof n === 'number' ? n : parseFloat(n || 0);
+  if (Number.isNaN(num)) return '$0.00';
+  return `$${num.toFixed(2)}`;
+};
+
+const truncateEmail = (email = '') => {
+  if (email.length <= 22) return email;
+  const [name, domain] = email.split('@');
+  if (!domain) return email.slice(0, 22) + '…';
+  if (name.length > 12) return name.slice(0, 12) + '…@' + domain;
+  return email;
+};
 
 export const Header = ({
-  walletConnected,
-  walletAddress,
-  usdtBalance,
+  user,
+  onLogout,
   refreshBalance,
-  networkError,
-  isPolygon,
   currentView,
   searchTerm,
   selectedCategory,
   categories,
-  connectWallet,
-  disconnectWallet,
-  switchToPolygon,
   setCurrentView,
   setSearchTerm,
   setSelectedCategory,
   setShowCreateMarket,
-  formatUSDT,
-  formatAddress,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
     if (!refreshBalance || isRefreshing) return;
     setIsRefreshing(true);
-    await refreshBalance();
-    setTimeout(() => setIsRefreshing(false), 1000); // Prevent rapid clicking
+    try {
+      await refreshBalance();
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 800);
+    }
   };
+
+  const balance = user?.usdt_balance ?? 0;
+  const email = user?.email ?? '';
+
   return (
     <header className="bg-black bg-opacity-40 backdrop-blur-md border-b border-purple-500 border-opacity-30 md:sticky md:top-0 z-50">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 py-1.5 sm:py-4">
@@ -49,59 +62,45 @@ export const Header = ({
               <h1 className="text-lg sm:text-2xl font-bold text-white">OutcomeBazaar</h1>
               <p className="hidden sm:flex text-sm text-purple-300 items-center gap-2">
                 Forecast Exchange
-                <span className="px-2 py-0.5 bg-purple-500 bg-opacity-30 rounded text-xs">Polygon</span>
               </p>
             </div>
           </button>
           <div className="flex items-center gap-1 sm:gap-3">
-            {walletConnected ? (
-              <>
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2">
-                  <span className="text-base sm:text-xl">💵</span>
-                  <span className="font-semibold text-sm sm:text-base">{formatUSDT(usdtBalance)}</span>
-                  <button
-                    onClick={handleRefresh}
-                    disabled={isRefreshing}
-                    className="ml-1 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-all disabled:opacity-50"
-                    title="Refresh balance"
-                  >
-                    <RefreshCw
-                      size={14}
-                      className={`${isRefreshing ? 'animate-spin' : ''}`}
-                    />
-                  </button>
-                </div>
-                <div className="hidden sm:flex bg-purple-500 bg-opacity-20 backdrop-blur-sm border border-purple-400 border-opacity-30 px-4 py-2 rounded-lg items-center gap-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-white font-mono text-sm">{formatAddress(walletAddress)}</span>
-                </div>
-                <button onClick={disconnectWallet} className="hidden sm:block px-4 py-2 bg-red-500 bg-opacity-20 hover:bg-opacity-30 text-red-300 rounded-lg transition-all text-sm">
-                  Disconnect
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2">
+              <span className="text-base sm:text-xl">💵</span>
+              <span className="font-semibold text-sm sm:text-base">{formatBalance(balance)}</span>
+              {refreshBalance && (
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="ml-1 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-all disabled:opacity-50"
+                  title="Refresh balance"
+                >
+                  <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
                 </button>
-                <button onClick={disconnectWallet} className="sm:hidden p-2 bg-red-500 bg-opacity-20 hover:bg-opacity-30 text-red-300 rounded-lg transition-all">
-                  <span className="text-sm">✕</span>
-                </button>
-              </>
-            ) : (
-              <button onClick={connectWallet} className="px-3 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-purple-500/50 text-sm sm:text-base">
-                <Wallet size={16} className="sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">Connect Wallet</span>
-                <span className="sm:hidden">Connect</span>
-              </button>
-            )}
+              )}
+            </div>
+            <div className="hidden sm:flex bg-purple-500 bg-opacity-20 backdrop-blur-sm border border-purple-400 border-opacity-30 px-3 py-2 rounded-lg items-center gap-2 max-w-[220px]">
+              <User size={14} className="text-purple-300 flex-shrink-0" />
+              <span className="text-white text-sm truncate" title={email}>
+                {truncateEmail(email)}
+              </span>
+            </div>
+            <button
+              onClick={onLogout}
+              className="hidden sm:flex px-3 py-2 bg-red-500 bg-opacity-20 hover:bg-opacity-30 text-red-300 rounded-lg transition-all text-sm items-center gap-1.5"
+            >
+              <LogOut size={14} /> Sign out
+            </button>
+            <button
+              onClick={onLogout}
+              className="sm:hidden p-2 bg-red-500 bg-opacity-20 hover:bg-opacity-30 text-red-300 rounded-lg transition-all"
+              title="Sign out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
-        {networkError && (
-          <div className="bg-red-500 bg-opacity-20 border border-red-500 border-opacity-30 rounded-lg px-4 py-3 mb-4 flex items-center gap-2">
-            <AlertCircle className="text-red-400" size={20} />
-            <span className="text-red-300 text-sm">{networkError}</span>
-            {!isPolygon && walletConnected && (
-              <button onClick={switchToPolygon} className="ml-auto px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm font-medium transition-colors">
-                Switch Network
-              </button>
-            )}
-          </div>
-        )}
         <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
           <div className="flex gap-1 sm:gap-2 flex-1 min-w-0">
             <button onClick={() => setCurrentView('markets')} className={`flex-1 px-2 sm:px-4 py-2 sm:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-xs sm:text-base ${currentView === 'markets' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' : 'bg-purple-500 bg-opacity-20 text-purple-300 hover:bg-opacity-30'}`}>
