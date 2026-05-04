@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Wallet, ExternalLink, AlertCircle, CheckCircle, Clock, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ExternalLink, AlertCircle, CheckCircle, Clock, Activity, Loader2 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { useWallet } from './hooks/useWallet';
+import { useAuth } from './contexts/AuthContext';
+import Login from './components/Login';
 import { Header } from './components/Header';
 import { MarketCard } from './components/MarketCard';
 import { TradeModal } from './components/TradeModal';
@@ -37,6 +39,14 @@ export default function OutcomeBazaar() {
     contracts,
     getMarketContract,
   } = useWallet();
+
+  const {
+    user: authUser,
+    loading: authLoading,
+    isAuthenticated,
+    refreshMe,
+    logout: authLogout,
+  } = useAuth();
 
   // Analytics hook
   const analytics = useAnalytics();
@@ -1158,28 +1168,34 @@ export default function OutcomeBazaar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  // ── Auth gate ─────────────────────────────────────────────────────────
+  // While restoring an existing session, show a loading screen. If unauthed,
+  // render the Login screen instead of the app shell.
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-purple-900 flex items-center justify-center">
+        <Loader2 className="text-purple-300 animate-spin" size={32} />
+      </div>
+    );
+  }
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 overflow-x-hidden">
       <Header
-        walletConnected={walletConnected}
-        walletAddress={walletAddress}
-        usdtBalance={usdtBalance}
-        refreshBalance={refreshBalance}
-        networkError={networkError}
-        isPolygon={isPolygon}
+        user={authUser}
+        onLogout={authLogout}
+        refreshBalance={refreshMe}
         currentView={currentView}
         searchTerm={searchTerm}
         selectedCategory={selectedCategory}
         categories={categories}
-        connectWallet={connectWallet}
-        disconnectWallet={disconnectWallet}
-        switchToPolygon={switchToPolygon}
         setCurrentView={setCurrentView}
         setSearchTerm={setSearchTerm}
         setSelectedCategory={setSelectedCategory}
         setShowCreateMarket={setShowCreateMarket}
-        formatUSDT={formatUSDT}
-        formatAddress={formatAddress}
       />
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8 overflow-x-hidden">
         {currentView === 'markets' && (
