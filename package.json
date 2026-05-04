@@ -4,11 +4,12 @@
   "description": "OutcomeBazaar Order Book Backend - P2P prediction market trading",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "tsc && cp src/database/schema.sql dist/database/ && cp -R src/database/migrations dist/database/",
+    "start": "node dist/database/migrate.js && node dist/index.js",
     "dev": "nodemon --exec ts-node src/index.ts",
     "test": "ts-node test/orderbook.test.ts",
-    "migrate": "ts-node src/database/migrate.ts",
+    "migrate": "node dist/database/migrate.js",
+    "migrate:dev": "ts-node src/database/migrate.ts",
     "admin": "ts-node src/scripts/admin.ts"
   },
   "keywords": [],
